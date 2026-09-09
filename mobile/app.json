@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "FácilID • AcessoSênior",
+    "slug": "facilid-acessosenior",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "android": {
+      "package": "br.edu.senac.facilid",
+      "permissions": [
+        "android.permission.NFC",
+        "android.permission.CAMERA",
+        "android.permission.VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir ler o código do cartão?",
+          "recordAudioAndroid": false
+        }
+      ],
+      "./plugins/withAccessibility.cjs"
+    ],
+    "web": {
+      "bundler": "metro",
+      "name": "FácilID"
+    }
+  }
+}
