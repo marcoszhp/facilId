@@ -2,10 +2,13 @@ import path from 'node:path';
 import { JsonUsuariosRepository } from '../repositories/usuarios.repository';
 import { assinaturaService, carregarChaves } from '../services/assinatura.service';
 import { emitirPessoa } from '../services/emissao.service';
+import { carregarAdminToken } from '../services/admin.service';
 const dir=path.resolve(process.env.DATA_DIR||'.local');
+carregarAdminToken(dir);
 const repo=new JsonUsuariosRepository(path.join(dir,'usuarios.json'));
 const assinatura=assinaturaService(carregarChaves(path.join(dir,'keys')));
 for(const pessoa of [{cpf:'12345678900',nome:'Maria Silva',idade:72},{cpf:'98765432100',nome:'José Santos',idade:68}]) {
-  if(!repo.buscar(pessoa.cpf)) emitirPessoa(pessoa,assinatura,repo);
+  // Reexecutar o preparo não deve reativar um exemplo bloqueado pelo responsável.
+  if(!repo.listar().some(registro=>registro.cpf===pessoa.cpf)) emitirPessoa(pessoa,assinatura,repo);
 }
-console.log('Maria Silva e José Santos disponíveis em GET /api/usuarios.');
+console.log('Exemplos disponíveis na área do responsável. A chave administrativa está em ADMIN_TOKEN ou .local/admin.token; ela não é exibida nos logs.');

@@ -11,7 +11,7 @@
     "dev": "npm run dev -w backend",
     "mobile": "npm run start -w mobile",
     "web": "npm run web -w mobile",
-    "test": "npm test -w backend",
+    "test": "npm run test --workspaces",
     "check": "node scripts/verify.mjs",
     "check:watch": "node scripts/verify.mjs --watch",
     "typecheck": "npm run typecheck --workspaces",

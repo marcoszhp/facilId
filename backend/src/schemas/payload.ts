@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const cpfSchema = z.string().regex(/^\d{11}$/, 'Informe os 11 números do CPF.');
 export const cadastroSchema = z.object({cpf: cpfSchema, nome: z.string().trim().min(2).max(100), idade: z.number().int().min(0).max(130)}).strict();
 export const identidadeSchema = cadastroSchema.extend({
+  versao: z.literal(2), emissaoId: z.string().uuid(),
   rosto_hash: z.string().min(1).max(128), digital_template: z.string().min(1).max(128),
   assinatura_svg: z.string().min(1).max(300)
 }).strict();

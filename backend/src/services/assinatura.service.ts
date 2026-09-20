@@ -5,7 +5,7 @@ import { Chip, Identidade } from '../schemas/payload';
 
 // Ordem canônica: a assinatura não depende da ordem das propriedades recebidas.
 export function canonicalizar(p: Identidade): string {
-  return JSON.stringify({cpf:p.cpf,nome:p.nome,idade:p.idade,rosto_hash:p.rosto_hash,digital_template:p.digital_template,assinatura_svg:p.assinatura_svg});
+  return JSON.stringify({versao:p.versao,emissaoId:p.emissaoId,cpf:p.cpf,nome:p.nome,idade:p.idade,rosto_hash:p.rosto_hash,digital_template:p.digital_template,assinatura_svg:p.assinatura_svg});
 }
 export function carregarChaves(dir: string) {
   mkdirSync(dir, {recursive:true});
