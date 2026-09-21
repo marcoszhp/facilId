@@ -1,9 +1,10 @@
 import { RequestHandler } from 'express';
 import { UsuariosRepository } from '../repositories/usuarios.repository';
 import { authService } from '../services/auth.service';
+import { ColetasRepository } from '../repositories/coletas.repository';
 
 // Toda futura rota do cidadão deve usar este middleware, inclusive agendamentos.
-export function exigirSessao(repo: UsuariosRepository, auth: ReturnType<typeof authService>): RequestHandler {
+export function exigirSessao(repo: UsuariosRepository, auth: ReturnType<typeof authService>, coletas: ColetasRepository): RequestHandler {
   return (req, res, next) => {
     try {
       const authorization = req.header('Authorization') || '';
@@ -11,7 +12,7 @@ export function exigirSessao(repo: UsuariosRepository, auth: ReturnType<typeof a
       const claims = auth.validar(authorization.slice(7));
       if (typeof claims === 'string' || !claims.sub || typeof claims.emissaoId !== 'string') throw new Error();
       const registro = repo.buscarEmissao(claims.emissaoId);
-      if (!registro || registro.estado !== 'ativo' || registro.chip.cpf !== claims.sub) throw new Error();
+      if (!registro || registro.estado !== 'ativo' || registro.chip.cpf !== claims.sub || !coletas.obter(claims.emissaoId)) throw new Error();
       res.locals.perfil = {cpf: registro.chip.cpf, nome: registro.chip.nome, idade: registro.chip.idade};
       res.locals.emissaoId = registro.chip.emissaoId;
       next();

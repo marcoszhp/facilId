@@ -1,8 +1,10 @@
-# Validação — Etapa 1 (19–20 de setembro de 2026)
+# Histórico de validação — Etapa 1 (19–20 de setembro de 2026)
+
+A implementação posterior de foto, assinatura desenhada e confirmação por biometria/PIN está em [VALIDACAO-BIOMETRIA.md](VALIDACAO-BIOMETRIA.md). As contagens e limitações abaixo descrevem a Etapa 1 original.
 
 Alterações no projeto existente, validadas localmente antes da publicação autorizada no GitHub. Ambiente Windows; Expo 54.0.37, React Native 0.81.5, React 19.1.0.
 
-A suíte atual tem **83 casos: 42 backend e 41 mobile**. O ciclo completo verifica tipos, testes e build backend/web. Resultado reproduzível em `reports/latest.json`; logs em `reports/types.log`, `reports/tests.log` e `reports/build.log`.
+A suíte daquela rodada tinha **83 casos: 42 backend e 41 mobile**. O ciclo completo verifica tipos, testes e build backend/web. O resultado da execução mais recente fica em `reports/latest.json`; logs em `reports/types.log`, `reports/tests.log` e `reports/build.log`.
 
 ## Checklist de aceite
 

@@ -19,10 +19,12 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Permitir ler o código do cartão?",
+          "cameraPermission": "Permitir fotografar no cadastro e ler o código do cartão?",
           "recordAudioAndroid": false
         }
       ],
+      ["expo-local-authentication", {"faceIDPermission": "Permitir confirmar o acesso neste aparelho com Face ID?"}],
+      ["expo-secure-store", {"configureAndroidBackup": true, "faceIDPermission": "Permitir confirmar o acesso neste aparelho com Face ID?"}],
       "./plugins/withAccessibility.cjs"
     ],
     "web": {

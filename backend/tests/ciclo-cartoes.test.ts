@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { createApp } from '../src/app';
 import { carregarAdminToken } from '../src/services/admin.service';
 import { JsonUsuariosRepository } from '../src/repositories/usuarios.repository';
+import { coletaTeste, loginCompleto } from './helpers';
 
 const secret = 'segredo-de-testes-de-ciclo-com-mais-de-32-caracteres';
 const admin = 'chave-administrativa-de-testes-com-mais-de-32-caracteres';
@@ -14,8 +15,8 @@ const pessoa = {cpf: '12345678900', nome: 'Maria Silva', idade: 72};
 let dir: string, app: ReturnType<typeof createApp>;
 beforeEach(() => {dir = mkdtempSync(path.join(tmpdir(), 'facilid-ciclo-')); app = createApp(dir, secret, admin);});
 afterEach(() => {rmSync(dir, {recursive: true, force: true});});
-const emitir = () => request(app).post('/api/emissao').set('X-Admin-Token', admin).send(pessoa).expect(201);
-const entrar = (chip: unknown, target = app) => request(target).post('/api/autenticar-nfc').send({cpfDigitado: pessoa.cpf, dadosChip: chip});
+const emitir = () => request(app).post('/api/emissao').set('X-Admin-Token', admin).send({...coletaTeste,...pessoa}).expect(201);
+const entrar = (chip: unknown, target = app) => loginCompleto(target,chip,pessoa.cpf);
 const perfil = (token: string, target = app) => request(target).get('/api/perfil').set('Authorization', `Bearer ${token}`);
 const bloquear = (id: string) => request(app).post(`/api/cartoes/${id}/bloquear`).set('X-Admin-Token', admin);
 
@@ -132,7 +133,7 @@ test('migração preserva bytes do arquivo legado e dados; cartão v1 requer ree
   expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({versao: 2, cartoes: [], legados: [legado]});
   expect((await entrar(legado, migrado)).status).toBe(401);
   expect((await entrar(legado, migrado)).body.mensagem).toMatch(/novo cartão/);
-  const novo = await request(migrado).post('/api/emissao').set('X-Admin-Token', admin).send(pessoa).expect(201);
+  const novo = await request(migrado).post('/api/emissao').set('X-Admin-Token', admin).send({...coletaTeste,...pessoa}).expect(201);
   expect((await entrar(novo.body, migrado)).status).toBe(200);
   expect(JSON.parse(readFileSync(file, 'utf8')).legados).toEqual([legado]);
   createApp(dir, secret, admin);
@@ -152,7 +153,7 @@ test('migração interrompe arquivo inválido ou backup conflitante sem sobrescr
 });
 
 test('request ID é gerado pelo servidor e correlaciona erro sem incluir dados enviados', async () => {
-  const result = await request(app).post('/api/emissao').set('X-Request-Id', 'nao-confiavel').set('Content-Type', 'application/json').send('{');
+  const result = await request(app).post('/api/emissao').set('X-Admin-Token', admin).set('X-Request-Id', 'nao-confiavel').set('Content-Type', 'application/json').send('{');
   expect(result.status).toBe(400);
   expect(result.headers['x-request-id']).toMatch(/^[\da-f-]{36}$/);
   expect(result.body.requestId).toBe(result.headers['x-request-id']);

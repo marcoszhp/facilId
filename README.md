@@ -1,6 +1,6 @@
 # FácilID / AcessoSênior
 
-Protótipo escolar de emissão e autenticação com CPF + cartão JSON assinado. Usa somente dados fictícios. Não inclui PIN, biometria real nem equivalência criptográfica com a CIE. Veja [a análise do prompt](ANALISE-DO-PROMPT.md).
+Protótipo escolar de emissão e autenticação com CPF + cartão JSON assinado e confirmação por PIN ou biometria do aparelho. Inclui captura autorizada de foto e assinatura desenhada, além de demonstração sem hardware com dados fictícios. Não faz reconhecimento facial nem comprova que a biometria pertence ao CPF. Veja [a análise original do prompt](ANALISE-DO-PROMPT.md) e a evolução descrita abaixo.
 
 ## Instalar e demonstrar no computador
 
@@ -28,12 +28,12 @@ npm run web
 
 Abra http://localhost:8081. API: http://localhost:3000, Swagger: http://localhost:3000/docs. O esquema também está em `/openapi.json`.
 
-O setup gera RSA em `backend/.local/keys` e cadastra Maria Silva (12345678900, 72 anos) e José Santos (98765432100, 68 anos). Os cartões ficam em `backend/.local/usuarios.json`. A listagem `/api/usuarios` exige autorização e retorna somente resumos, sem assinatura ou conteúdo do cartão. Repetir setup preserva as chaves e os cartões ativos existentes. Os segredos de sessão e administração são gerados no primeiro início em `backend/.local/jwt.secret` e `backend/.local/admin.token`; podem ser substituídos por `JWT_SECRET` e `ADMIN_TOKEN`, respectivamente, com pelo menos 32 caracteres. Nunca versionar `.local/`.
+O setup gera RSA em `backend/.local/keys`. Emita exemplos pela área do responsável, escolhendo um PIN de 6 números. Opcionalmente, defina a variável `DEMO_PIN` antes do setup para gerar os dois exemplos fictícios Maria Silva e José Santos; não existe PIN padrão. Limpe essa variável depois. Repetir setup preserva chaves e cartões, inclusive bloqueados, e não migra cartões antigos silenciosamente. Os cartões ficam em `backend/.local/usuarios.json`. A listagem `/api/usuarios` exige autorização e retorna somente resumos. Os segredos de sessão e administração são gerados em `backend/.local/jwt.secret` e `backend/.local/admin.token`; podem ser substituídos por `JWT_SECRET` e `ADMIN_TOKEN`, respectivamente, com pelo menos 32 caracteres. Nunca versionar `.local/`.
 
 1. Abra **Área do responsável**. Abra o arquivo `backend/.local/admin.token` localmente no editor e copie a chave para o campo administrativo. Ela fica somente na memória desta tela; não compartilhe a chave com cidadãos nem a inclua em capturas de tela.
-2. Entre na área administrativa e emita um cartão com dados fictícios, ou selecione um cartão ativo da lista. O cidadão não consegue emitir, listar ou recuperar cartões sem essa chave.
+2. Entre na área administrativa, escolha **Usar modo demonstração sem câmera**, preencha dados fictícios e desenhe/confirme a assinatura ou toque em **Usar assinatura fictícia**. Escolha e confirme um PIN de 6 números e gere o cartão. O cidadão não consegue emitir, listar ou recuperar cartões sem a chave administrativa.
 3. Após emitir, toque em **Usar este cartão na demonstração**. O app volta ao cidadão com o cartão preparado, sem copiar JSON.
-4. Confira o CPF, toque em **Continuar** e em **Entrar com o cartão preparado**. Confira nome e cartão digital.
+4. Confira o CPF, toque em **Continuar** e em **Entrar com o cartão preparado**. Na etapa **Confirme seu acesso**, informe o PIN criado na emissão e toque em **Confirmar PIN**. Só então será aberta a sessão. No navegador, esse é o caminho disponível.
 5. Toque em **Consultar meu acesso** para validar a sessão na API; depois **Sair**.
 6. As alternativas ficam em **Opções da demonstração**: ler QR Code, colar texto e usar o exemplo preparado. Para QR, mostre o código em outra tela. Navegadores exigem localhost ou HTTPS para câmera; se a permissão não puder ser solicitada novamente, o app explica como alterá-la e oferece texto.
 7. Troque o CPF ou altere o nome dentro do JSON mantendo a assinatura: deve recusar. Emita uma segunda via com os mesmos dados: o cartão anterior deve ser recusado.
@@ -42,6 +42,47 @@ O setup gera RSA em `backend/.local/keys` e cadastra Maria Silva (12345678900, 7
 Cada cartão v2 recebe `emissaoId` UUID e `versao: 2` dentro da assinatura canônica. O repositório mantém o estado ativo, bloqueado ou substituído separadamente da credencial assinada. Bloquear ou reemitir invalida também as sessões daquele cartão na próxima consulta à API. O app retorna ao login ao receber 401 e usa o horário de expiração informado pelo servidor, com aviso prévio.
 
 **Migração dos dados antigos:** ao abrir um arquivo v1, o repositório preserva uma cópia exata em `usuarios.json.legado-v1.json` e os dados na seção `legados` do arquivo v2. Cartões v1 não têm identificador de emissão e precisam ser reemitidos pelo responsável. A migração não assina cartões novos automaticamente. O backup também contém credenciais e deve permanecer privado em `.local/`.
+
+**Cartões v2 emitidos antes desta coleta também precisam de segunda via**, pois não têm assinatura capturada e PIN cadastrados. Nenhum PIN é criado automaticamente para credenciais antigas. Se esquecer o PIN ou perder o aparelho, peça ao responsável o bloqueio e uma nova emissão; isso invalida cartão, sessões e credenciais dos aparelhos antigos.
+
+## Foto, assinatura e biometria
+
+Para a coleta autorizada, mantenha o modo de foto e assinatura na área do responsável. Leia o aviso com o voluntário e confirme o consentimento antes de abrir a câmera. Capture o rosto, confira a prévia e escolha **Refazer foto** ou **Confirmar foto**. Desenhe no quadro com o dedo ou o mouse; **Limpar assinatura** permite refazer. Um quadro vazio ou um toque isolado não pode ser confirmado. Defina o PIN e gere o cartão. A câmera precisa de permissão e, no navegador, de localhost ou HTTPS. Recusar a câmera não impede escolher a demonstração sem foto real.
+
+O upload autenticado aceita JPEG/PNG de até 2 MB e dimensões limitadas. A foto e o SVG gerado no servidor ficam separados da tag. `rosto_hash` contém SHA-256 dos bytes da foto; o campo legado `assinatura_svg` contém apenas `sha256:<hash>`, sem desenho. `digital_template` é um marcador explícito de que nenhuma digital foi coletada. A assinatura RSA e sua representação canônica foram preservadas.
+
+Em aparelho compatível, entre primeiro com PIN e marque **Habilitar biometria neste aparelho**, somente num celular de confiança. A API emite uma credencial aleatória vinculada ao cartão; o app guarda essa credencial no SecureStore com `requireAuthentication: true`. Nos próximos acessos, **Confirmar com biometria** solicita a confirmação do sistema para desbloqueá-la. O servidor verifica a credencial antes de emitir JWT: enviar um simples resultado booleano não libera acesso. No iOS, a primeira gravação no Keychain pode não mostrar o diálogo; a leitura protegida o exige. O app não recebe imagem facial, digital ou template do sensor.
+
+Biometria ausente, não configurada, cancelada, recusada ou invalidada por mudanças no cadastro biométrico oferece o PIN. A habilitação é opcional, com até cinco credenciais por cartão; novos registros substituem o mais antigo. Alterar o endereço do servidor exige habilitação novamente para aquele endereço. A API entrega desafios de dois minutos, de uso único, e só entrega sessão após a confirmação. Cinco erros bloqueiam novas tentativas daquela emissão por 30 segundos, mesmo após novo desafio ou reinício do servidor.
+
+Dependências alinhadas ao mapa do Expo 54 instalado: [LocalAuthentication ~17.0.9](https://docs.expo.dev/versions/v54.0.0/sdk/local-authentication/), [SecureStore ~15.0.8](https://docs.expo.dev/versions/v54.0.0/sdk/securestore/) e [FileSystem ~19.0.24](https://docs.expo.dev/versions/v54.0.0/sdk/filesystem-legacy/). A câmera e o SVG já faziam parte do projeto. Recompile o Dev Client após instalar; Expo Go não valida este conjunto nativo. O navegador usa PIN, sem simular uma autenticação biométrica bem-sucedida.
+
+## Dados sensíveis e privacidade
+
+Use dados fictícios para a demonstração habitual. Capture foto e assinatura reais apenas de voluntários informados que consentiram, como colegas de turma; nunca de terceiros sem autorização. Fotos, assinaturas e dados biométricos exigem avaliação de finalidade, necessidade, retenção e controle de acesso conforme a [LGPD](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm). Dados biométricos vinculados a uma pessoa são dados pessoais sensíveis. O botão de consentimento deste protótipo não substitui essa avaliação nem constitui um sistema completo de comprovação de consentimento.
+
+O backend guarda foto, SVG e índice de fatores cifrados com AES-256-GCM em `backend/.local/coletas/`, fora do Git e sem rota pública de mídia. O PIN é armazenado apenas como scrypt com salt aleatório, dentro do índice cifrado; credenciais de aparelho têm apenas hash no servidor. A chave `coleta.key` fica junto do armazenamento privado: isso protege arquivos isolados, mas não alguém com acesso à pasta inteira. Os modos de arquivo restritos em Unix não substituem ACLs no Windows. Use uma conta/pasta restrita e evite sincronizar dados reais desta pasta de desenvolvimento com OneDrive ou serviços semelhantes. Não inclua `.local`, PINs, fotos, cartões ou segredos em logs, prints, backups públicos ou no Git.
+
+No aplicativo, a foto e o desenho ficam em memória durante a emissão e são limpos ao concluir ou sair. O arquivo temporário criado pela câmera nativa é removido após a captura, inclusive se a resposta chegar após sair da tela. Uploads sem emissão expiram após 15 minutos e são removidos no próximo acesso ao repositório ou reinício; não há temporizador que apague arquivos com o servidor desligado. Coletas já emitidas permanecem para o histórico, inclusive de cartões bloqueados ou substituídos. Ainda falta uma política operacional de exclusão e retenção: encerre demonstrações com dados reais de acordo com o combinado com os voluntários. Não apague chaves isoladamente, pois isso torna as coletas ilegíveis.
+
+Use HTTPS fora do teste local. Este protótipo roda em uma única instância; dados e fatores em arquivos separados ainda exigiriam transações, gestão individual de administradores, recuperação de conta, auditoria e gestão de chaves para uso real. O servidor confirma a posse da credencial do aparelho, sem atestado criptográfico de hardware nem garantia contra um cliente comprometido.
+
+## O que este protótipo realmente comprova
+
+- Captura e confirmação de foto, com vínculo de integridade entre seus bytes e o cartão.
+- Coleta de assinatura desenhada, com bloqueio de desenho vazio e hash do SVG guardado.
+- Integridade e origem do cartão pela RSA; situação ativa, substituída ou bloqueada no servidor.
+- Conhecimento do PIN ou apresentação da credencial protegida pela biometria do aparelho, antes de criar sessão. A validação física desse diálogo em Android/iOS ainda precisa ser realizada; testes automatizados simulam o sensor.
+- Demonstração completa sem câmera, NFC ou biometria, claramente identificada como fictícia.
+
+## O que ainda não comprova
+
+- Reconhecimento facial 1:1, comparação de rostos ou prova de vida contra foto/vídeo.
+- Autoria da assinatura desenhada ou autenticidade de uma assinatura manuscrita.
+- Que a digital/face cadastrada no celular pertence ao CPF informado. Em celular compartilhado, outras biometrias cadastradas também podem autorizar acesso.
+- Captura ou reconhecimento de impressão digital com sensor dedicado; identidade civil, equivalência a documento oficial ou resistência do cartão à clonagem.
+
+Comparação facial futura exigiria tecnologia dedicada, avaliação de vieses, prova de vida e testes em hardware real. Detectar a presença de um rosto não identifica a pessoa. A cópia do JSON continua possível, embora o cartão sozinho não seja suficiente para entrar sem o segundo fator.
 
 ## Android e NFC real
 
@@ -58,10 +99,14 @@ Em aparelho físico, conecte por USB com depuração e use `adb reverse tcp:3000
 1. Em Android com NFC, gere um cartão no emissor.
 2. Use uma tag **NDEF formatada e gravável com capacidade suficiente (recomendado 2 KB+)**. Toque em **Gravar na tag NFC**, aproxime e aguarde confirmação.
 3. Volte à entrada, informe o CPF, toque em **Continuar** e **Aproximar cartão**.
-4. Aproxime a tag; confira leitura em voz alta, vibração e cartão digital.
+4. Aproxime a tag, confirme o PIN ou a biometria habilitada; confira leitura em voz alta, vibração e cartão digital.
 5. Teste NFC desligado, cancelamento e tag pequena/somente leitura. A falha deve mostrar mensagem sem liberar acesso.
 
 **NTAG213/215 não comportam este JSON RSA.** Não é possível satisfazer esse critério do prompt preservando todos os campos e assinatura RSA. O código verifica a capacidade antes de escrever. Não se deve truncar nem reduzir a segurança da assinatura para forçar a gravação.
+
+Para comprar cartões para o formato atual, a recomendação é **MIFARE DESFire EV3 de 4 KB, já configurado como NDEF Type 4, gravável e com espaço NDEF suficiente**. O app não formata cartões DESFire virgens nem configura suas chaves; confirme o fornecimento pronto com o vendedor e teste uma unidade no celular antes de comprar um lote. A NXP documenta [memória e suporte Type 4](https://www.nxp.com/products/MF3DHx3). O uso NDEF atual não ativa as funções criptográficas do chip.
+
+A [NTAG216 tem 888 bytes de memória de usuário](https://www.nxp.com/products/NTAG213_215_216), parte usada pela estrutura NDEF. Um exemplo do cartão novo ocupou 731 bytes como mensagem NDEF; um nome de 100 caracteres acentuados elevou para 909 bytes. Assim, NTAG216 pode atender exemplos pequenos, mas não todos os cadastros aceitos. Fotos e desenhos completos nunca são gravados na tag. NTAG I²C Plus 2K oferece outra opção de memória, mas costuma ser vendido como módulo; confira formato, antena e capacidade NDEF efetiva.
 
 ## Testes e looping
 

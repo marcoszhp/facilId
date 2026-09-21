@@ -7,11 +7,27 @@ export const cartao: Chip = {
   cpf: '12345678900',
   nome: 'Maria Fictícia',
   idade: 72,
-  rosto_hash: 'rosto-ficticio',
-  digital_template: 'digital-ficticia',
-  assinatura_svg: 'M10 80 Q 52 10 100 80',
+  rosto_hash: 'a'.repeat(64),
+  digital_template: 'DEMONSTRACAO_SEM_BIOMETRIA',
+  assinatura_svg: 'sha256:' + 'b'.repeat(64),
   assinatura_digital_orgao: 'YXNzaW5hdHVyYS1maWN0aWNpYQ==',
 };
+
+export function desafio() {
+  return { desafioId: 'f9a94c62-51d3-4386-8a4f-c47d399ade12', expiraEm: Date.now() + 120_000 };
+}
+
+export function cadastroDemo() {
+  return {
+    cpf: cartao.cpf, nome: cartao.nome, idade: cartao.idade,
+    modo: 'demonstracao' as const,
+    pin: '123456',
+    assinatura: {
+      largura: 320 as const, altura: 180 as const,
+      tracos: [[{ x: 12, y: 70 }, { x: 90, y: 45 }, { x: 175, y: 92 }]],
+    },
+  };
+}
 
 export function sessao(overrides: Partial<Sessao> = {}): Sessao {
   return {
