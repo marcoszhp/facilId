@@ -1,5 +1,19 @@
 # Validação — integração com MySQL do XAMPP
 
+## Evolução em andamento — propósito pós-login e usabilidade (2026-09-26)
+
+Os resultados abaixo são posteriores à integração descrita no restante deste documento. O pedido tem sete itens; apenas os dois primeiros estão concluídos neste marco. Cada ciclo executou tipos, testes backend/mobile/SQL e builds backend/web, com dados de teste isolados.
+
+| Marco | Resultado | Evidência local |
+| --- | --- | --- |
+| Antes das alterações | 203 testes: 115 backend +78 mobile +10 SQL | `reports/poslogin-baseline.json` |
+| Item 1: confirmação de emissão/segunda via e bloqueio antes de qualquer upload/escrita | 210 testes: 115+85+10; sete novos casos de cancelamento, confirmação única e saída | `reports/poslogin-item1.json` / `.log` |
+| Item 2: ajustes só na área do responsável, rascunho e confirmação explícita da mudança | 218 testes: 115+93+10; oito novos casos em `mobile/tests/Conexao.test.tsx` | `reports/poslogin-item2.json` / `.log` |
+
+Itens 3–7 (agendamentos, emissão em etapas, filtros, diagnóstico e histórico administrativo) ainda pendentes neste marco. Nenhum teste físico adicional foi realizado. Os avisos existentes sobre foto, assinatura e biometria foram preservados.
+
+## Integração original
+
 O FácilID passou a usar o banco `facilid` do XAMPP por padrão. O usuário escolheu a criação desse banco local. O adaptador JSON continua disponível explicitamente para testes e demonstração sem banco. A etapa anterior está registrada em [VALIDACAO-BIOMETRIA.md](VALIDACAO-BIOMETRIA.md).
 
 ## Escopo entregue
