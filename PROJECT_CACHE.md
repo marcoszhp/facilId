@@ -2,7 +2,7 @@
 
 Base: **2026-09-26**, código em `1a37bcfc0405eae475b5d2d7fe171431b6b57475`, publicado em `main` de https://github.com/marcoszhp/facilId. Este cache é um índice, não uma especificação imutável. Confira diferenças posteriores somente no escopo da tarefa.
 
-Atualização documental posterior à base: guias em `docs/`, Swagger complementado e exportador OpenAPI. Sem mudança nos fluxos de autenticação/persistência.
+Atualização documental posterior à base: commit `8812e0b7deead44bedfc48750a138fd591e24f83`, publicado e confirmado em `origin/main` em 2026-09-26. Inclui guias em `docs/`, Swagger complementado e exportador OpenAPI. Sem mudança nos fluxos de autenticação/persistência.
 
 Raiz desta cópia: `C:/Users/marco/OneDrive/Desktop/NFC SENAC`. **Todos os caminhos abaixo são exatos e relativos à raiz**, salvo indicação contrária. Não contêm segredos.
 
@@ -170,7 +170,7 @@ Parser geral 16 KB. `X-Request-Id` em respostas; tratador geral retorna `mensage
 - Retomada Codex `concluir-f-cilid-com-mysql-xampp` reativada: **“Continuar FácilID com margem de 5%”**, verificação a cada hora. Antes de etapas grandes, consultar uso; ao restar <=5% em qualquer janela aplicável, registrar ponto de parada e adiar trabalho pesado. Não é reserva garantida nem job do app. Manter ativa sem pendências, encerrando rapidamente/sem alterações; não pausar automaticamente ao concluir. Não comprar créditos/resets.
 - Documentação atual: `docs/README.md` e nove guias especializados; contrato `docs/openapi.json` gerado. Backend compilou e 26 testes de `backend/tests/autenticacao.test.ts` passaram após ajuste exclusivamente documental do Swagger; os 203 testes completos acima continuam sendo evidência da base anterior, não nova execução integral.
 - Revisão final documental em 2026-09-26: 10 documentos, 193 links locais válidos, 10 caminhos OpenAPI; Swagger Parser aprovou o contrato e o JSON corresponde à declaração compilada. Cinco diagramas Mermaid revisados como texto, sem renderização. Evidência local: `reports/documentation-validation.json`. Manual corrigido para PIN direto na web, redesenho após refazer foto e tamanho dos botões/campos; nenhum fluxo funcional alterado.
-- Pedido de documentação profissional concluído; publicação desta rodada deve ser conferida no Git antes de nova tentativa. Após publicar, não há outra implementação autorizada pendente identificada: itens opcionais acima não são tarefas. Nas retomadas sem novo pedido, encerrar sem testes, alterações ou mensagem e manter a automação ativa.
+- Pedido de documentação profissional concluído e publicado no commit documental indicado no início. Não há outra implementação autorizada pendente identificada: itens opcionais acima não são tarefas; ensaios físicos continuam sem evidência. Nas retomadas sem novo pedido, encerrar sem testes, alterações ou mensagem e manter a automação ativa. Não repetir a publicação já confirmada.
 
 ## 11. Índice de localização
 
