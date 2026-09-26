@@ -1,6 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 const ref = (name: string) => ({'$ref': `#/components/schemas/${name}`});
-const response = (description: string, schema: object) => ({description, content: {'application/json': {schema}}});
+const response = (description: string, schema: object) => ({description, headers: {'X-Request-Id': {description: 'Identificador de correlação, sem dados pessoais.', schema: {type: 'string', format: 'uuid'}}}, content: {'application/json': {schema}}});
 const body = (schema: object) => ({required: true, content: {'application/json': {schema}}});
 const cadastro = {type: 'object', additionalProperties: false, required: ['cpf', 'nome', 'idade'], properties: {
   cpf: {type: 'string', pattern: '^[0-9]{11}$', example: '12345678900'},
@@ -39,11 +39,11 @@ export const swagger = swaggerJsdoc({definition: {
       Coleta: {type:'object',properties:{modo:{type:'string',enum:['real','demonstracao']},fotoHash:{type:'string'},assinaturaHash:{type:'string'},mimeType:{type:'string'},coletadoEm:{type:'integer',format:'int64'},consentimento:{type:'boolean'}},description:'Somente metadados, nunca foto, SVG, PIN, salt ou credencial de aparelho.'},
       Chip: {type: 'object', additionalProperties: false, required: [...cadastro.required, 'versao', 'emissaoId', 'rosto_hash', 'digital_template', 'assinatura_svg', 'assinatura_digital_orgao'], properties: {
         ...cadastro.properties, versao: {type: 'integer', enum: [2]}, emissaoId: id,
-        rosto_hash: {type: 'string',description:'SHA-256 dos bytes da foto; modo demonstração usa imagem artificial.'}, digital_template: {type: 'string',description:'Marcador BIOMETRIA_LOCAL_NAO_COLETADA ou DEMONSTRACAO_SEM_BIOMETRIA, nunca um template biométrico.'}, assinatura_svg: {type: 'string',description:'Nome legado: agora armazena sha256:<hash do SVG gerado de coordenadas>, não o SVG.'},
-        assinatura_digital_orgao: {type: 'string', description: 'RSA-SHA256 em base64; cobre os campos de identidade, versao e emissaoId'}
+        rosto_hash: {type: 'string',minLength:1,maxLength:128,description:'SHA-256 dos bytes da foto; modo demonstração usa imagem artificial.'}, digital_template: {type: 'string',minLength:1,maxLength:128,description:'Marcador BIOMETRIA_LOCAL_NAO_COLETADA ou DEMONSTRACAO_SEM_BIOMETRIA, nunca um template biométrico.'}, assinatura_svg: {type: 'string',minLength:1,maxLength:300,description:'Nome legado: agora armazena sha256:<hash do SVG gerado de coordenadas>, não o SVG.'},
+        assinatura_digital_orgao: {type: 'string',pattern:'^[A-Za-z0-9+/]+={0,2}$',maxLength:1024, description: 'RSA-SHA256 em base64; cobre os campos de identidade, versao e emissaoId'}
       }},
       ResumoCartao: {type: 'object', properties: {...cadastro.properties, emissaoId: id, estado}},
-      Erro: {type: 'object', properties: {mensagem: {type: 'string'}, requestId: {type: 'string', format: 'uuid', description: 'Correlação opcional; também disponível no cabeçalho X-Request-Id'}}},
+      Erro: {type: 'object', properties: {mensagem: {type: 'string'}, sucesso:{type:'boolean',enum:[false],description:'Presente nas recusas da primeira etapa de autenticação.'}, tentarEm:{type:'integer',format:'int64',description:'Retomada após limite de fatores, em Unix epoch milissegundos.'}, requestId: {type: 'string', format: 'uuid', description: 'Correlação opcional; também disponível no cabeçalho X-Request-Id'}}},
       Perfil: {type: 'object', properties: cadastro.properties},
       Sessao: {type: 'object', required: ['sucesso', 'token', 'perfil', 'expiraEm'], properties: {
         sucesso: {type: 'boolean'}, token: {type: 'string'}, perfil: ref('Perfil'),
@@ -53,6 +53,10 @@ export const swagger = swaggerJsdoc({definition: {
     }
   },
   paths: {
+    '/health': {get: {summary:'Verificar disponibilidade da persistência',description:'No servidor MySQL executa SELECT 1. Não autentica cidadão nem certifica câmera, NFC, biometria ou integridade de todas as coletas.',responses:{
+      '200':response('Persistência disponível',{type:'object',required:['status'],properties:{status:{type:'string',enum:['ok']}}}),
+      '503':response('Persistência indisponível',{type:'object',required:['status','mensagem'],properties:{status:{type:'string',enum:['indisponivel']},mensagem:{type:'string',example:'Banco de dados indisponível.'}}})
+    }}},
     '/api/emissao': {post: {
       summary: 'Emitir cartão com foto, assinatura desenhada e PIN', description: 'Toda emissão recebe UUID novo. Cartão anterior, suas sessões e credenciais de aparelho ficam inválidos. Corpo limitado a 64 KB; RSA/canonicalizador preservados.',
       security: admin, requestBody: body(ref('Emissao')),
@@ -77,10 +81,24 @@ export const swagger = swaggerJsdoc({definition: {
       summary: 'Iniciar verificação com CPF e cartão ativo', description:'Esta etapa nunca emite JWT. É necessário confirmar o segundo fator.',requestBody: body({type: 'object', required: ['cpfDigitado', 'dadosChip'], additionalProperties: false, properties: {cpfDigitado: cadastro.properties.cpf, dadosChip: ref('Chip')}}),
       responses: {'200': response('Desafio de 2 minutos', ref('Desafio')), '401': response('Cartão recusado ou precisa de reemissão', ref('Erro')),'429':response('Muitos desafios pendentes',ref('Erro'))}
     }},
-    '/api/autenticar-confirmar': {post:{summary:'Confirmar PIN ou credencial protegida do aparelho',requestBody:body(ref('Confirmacao')),responses:{'200':response('Sessão de 15 minutos',ref('Sessao')),'400':response('Escolha inválida de fator',ref('Erro')),'401':response('Fator incorreto, desafio vencido/consumido ou cartão revogado',ref('Erro')),'429':response('Tentativas limitadas por emissão; Retry-After informa a espera',ref('Erro'))}}},
+    '/api/autenticar-confirmar': {post:{summary:'Confirmar PIN ou credencial protegida do aparelho',requestBody:body(ref('Confirmacao')),responses:{'200':response('Sessão de 15 minutos',ref('Sessao')),'400':response('Escolha inválida de fator',ref('Erro')),'401':response('Fator incorreto, desafio vencido/consumido ou cartão revogado',ref('Erro')),'409':response('Uma confirmação já reservou este desafio; aguarde sua resposta',ref('Erro')),'429':{...response('Tentativas limitadas por emissão; Retry-After informa a espera',ref('Erro')),headers:{...response('',{}).headers,'Retry-After':{description:'Segundos até uma nova tentativa; pelo menos 1.',schema:{type:'integer',minimum:1}}}}}}},
     '/api/perfil': {get: {
       summary: 'Consultar perfil com sessão válida e cartão ativo', security: [{bearerAuth: []}],
       responses: {'200': response('Perfil', ref('Perfil')), '401': response('Sessão expirada, cartão bloqueado ou substituído', ref('Erro'))}
     }}
   }
 }, apis: []});
+
+// Respostas comuns dos parsers e do tratador geral já existentes no app.
+// Esta declaração complementa a documentação sem alterar as rotas.
+const operacoes=(swagger as {paths:Record<string,Record<string,{responses:Record<string,unknown>}>>}).paths;
+for(const [rota,metodos] of Object.entries(operacoes)){
+  if(!rota.startsWith('/api/'))continue;
+  for(const [metodo,operacao] of Object.entries(metodos)){
+    operacao.responses['500']=response('Falha interna ou de persistência; não indica credencial inválida',ref('Erro'));
+    if(metodo==='post'){
+      operacao.responses['400']??=response('JSON em formato inválido',ref('Erro'));
+      operacao.responses['413']??=response('Corpo maior que o limite do endpoint',ref('Erro'));
+    }
+  }
+}

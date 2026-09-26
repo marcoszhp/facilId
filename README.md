@@ -2,6 +2,10 @@
 
 Protótipo escolar de emissão e autenticação com CPF + cartão JSON assinado e confirmação por PIN ou biometria do aparelho. Inclui captura autorizada de foto e assinatura desenhada, além de demonstração sem hardware com dados fictícios. Não faz reconhecimento facial nem comprova que a biometria pertence ao CPF. Veja [a análise original do prompt](ANALISE-DO-PROMPT.md) e a evolução descrita abaixo.
 
+## Documentação completa
+
+Comece pelo [índice da documentação](docs/README.md): visão geral, instalação, manual do cidadão e do responsável, arquitetura, banco de dados, API, segurança, testes e operação. O [contrato OpenAPI exportado](docs/openapi.json) pode ser importado em ferramentas; atualize-o com `npm run docs:api`. Para manutenção assistida, consulte o [cache técnico](PROJECT_CACHE.md).
+
 ## Instalar e demonstrar no computador
 
 Pré-requisitos: Node.js 22.13+ (validado neste ambiente com 24), npm, navegador e XAMPP com **MySQL iniciado** no painel. A instalação do XAMPP validada usa MariaDB 10.4.32, compatível com o driver MySQL usado aqui. Na pasta raiz:

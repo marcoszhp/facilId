@@ -20,7 +20,8 @@
     "db:check": "npm run db:check -w backend",
     "db:migrate": "npm run db:migrate -w backend",
     "test:mysql": "npm run test:mysql -w backend",
-    "check:mysql": "node scripts/verify.mjs --mysql"
+    "check:mysql": "node scripts/verify.mjs --mysql",
+    "docs:api": "npm run build -w backend && node scripts/export-openapi.mjs"
   },
   "allowScripts": {
     "@scarf/scarf": true,

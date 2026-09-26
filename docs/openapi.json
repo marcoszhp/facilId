@@ -1,0 +1,1729 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "FácilID — demonstração local",
+    "version": "2.1.0",
+    "description": "Rotas administrativas exigem X-Admin-Token. Foto capturada e assinatura desenhada ficam cifradas no servidor; o cartão mantém apenas hashes, sem reconhecimento facial ou verificação de autoria. Biometria do aparelho protege uma credencial local; o servidor não recebe digital nem aceita um booleano como prova. CPF + cartão gera desafio; PIN ou credencial de aparelho previamente registrada confirma o acesso. Cartões anteriores sem coleta/PIN exigem reemissão. Use dados fictícios ou voluntários com consentimento."
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "adminToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Admin-Token"
+      }
+    },
+    "schemas": {
+      "Cadastro": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cpf",
+          "nome",
+          "idade"
+        ],
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "pattern": "^[0-9]{11}$",
+            "example": "12345678900"
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Maria Silva"
+          },
+          "idade": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 130,
+            "example": 72
+          }
+        }
+      },
+      "Emissao": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cpf",
+          "nome",
+          "idade",
+          "modo",
+          "assinatura",
+          "pin"
+        ],
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "pattern": "^[0-9]{11}$",
+            "example": "12345678900"
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Maria Silva"
+          },
+          "idade": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 130,
+            "example": 72
+          },
+          "modo": {
+            "type": "string",
+            "enum": [
+              "real",
+              "demonstracao"
+            ]
+          },
+          "fotoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "assinatura": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "largura",
+              "altura",
+              "tracos"
+            ],
+            "properties": {
+              "largura": {
+                "type": "integer",
+                "enum": [
+                  320
+                ]
+              },
+              "altura": {
+                "type": "integer",
+                "enum": [
+                  180
+                ]
+              },
+              "tracos": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 32,
+                "description": "Até 1500 pontos no total; pelo menos um segmento com deslocamento após arredondar para 2 casas.",
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 512,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "x",
+                      "y"
+                    ],
+                    "properties": {
+                      "x": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 320
+                      },
+                      "y": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 180
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "pin": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$",
+            "writeOnly": true
+          },
+          "consentimento": {
+            "type": "boolean"
+          }
+        },
+        "description": "No modo real, fotoId pendente e consentimento:true são obrigatórios. Demonstração usa imagem artificial e não aceita fotoId. PIN não integra o cartão e só é persistido com scrypt/salt dentro do índice cifrado."
+      },
+      "Desenho": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "largura",
+          "altura",
+          "tracos"
+        ],
+        "properties": {
+          "largura": {
+            "type": "integer",
+            "enum": [
+              320
+            ]
+          },
+          "altura": {
+            "type": "integer",
+            "enum": [
+              180
+            ]
+          },
+          "tracos": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "description": "Até 1500 pontos no total; pelo menos um segmento com deslocamento após arredondar para 2 casas.",
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 512,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 320
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 180
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Foto": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "base64",
+          "mimeType"
+        ],
+        "properties": {
+          "base64": {
+            "type": "string",
+            "format": "byte",
+            "maxLength": 2796204,
+            "description": "JPEG/PNG sem prefixo data:, até 2 MB decodificados e 4096 por dimensão (máximo 12 MP)."
+          },
+          "mimeType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png"
+            ]
+          }
+        }
+      },
+      "ReferenciaFoto": {
+        "type": "object",
+        "required": [
+          "id",
+          "hash"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "description": "Referência privada pendente, válida por 15 minutos e consumida por uma emissão; não é URL."
+      },
+      "Desafio": {
+        "type": "object",
+        "required": [
+          "desafioId",
+          "expiraEm"
+        ],
+        "properties": {
+          "desafioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiraEm": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Expiração em Unix epoch milissegundos, 2 minutos. Não concede acesso."
+          }
+        }
+      },
+      "Confirmacao": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "desafioId"
+        ],
+        "properties": {
+          "desafioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pin": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$",
+            "writeOnly": true
+          },
+          "credencialDispositivo": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "writeOnly": true
+          },
+          "registrarDispositivo": {
+            "type": "boolean"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "pin"
+            ],
+            "not": {
+              "required": [
+                "credencialDispositivo"
+              ]
+            }
+          },
+          {
+            "required": [
+              "credencialDispositivo"
+            ],
+            "not": {
+              "required": [
+                "pin"
+              ]
+            }
+          }
+        ],
+        "description": "Exatamente PIN ou credencialDispositivo. registrarDispositivo:true somente com PIN. PIN incorreto permite repetir o desafio; sucesso o consome. Cinco falhas bloqueiam por 30 segundos, mesmo com novo desafio ou reinício."
+      },
+      "Coleta": {
+        "type": "object",
+        "properties": {
+          "modo": {
+            "type": "string",
+            "enum": [
+              "real",
+              "demonstracao"
+            ]
+          },
+          "fotoHash": {
+            "type": "string"
+          },
+          "assinaturaHash": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "coletadoEm": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "consentimento": {
+            "type": "boolean"
+          }
+        },
+        "description": "Somente metadados, nunca foto, SVG, PIN, salt ou credencial de aparelho."
+      },
+      "Chip": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cpf",
+          "nome",
+          "idade",
+          "versao",
+          "emissaoId",
+          "rosto_hash",
+          "digital_template",
+          "assinatura_svg",
+          "assinatura_digital_orgao"
+        ],
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "pattern": "^[0-9]{11}$",
+            "example": "12345678900"
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Maria Silva"
+          },
+          "idade": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 130,
+            "example": 72
+          },
+          "versao": {
+            "type": "integer",
+            "enum": [
+              2
+            ]
+          },
+          "emissaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rosto_hash": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "SHA-256 dos bytes da foto; modo demonstração usa imagem artificial."
+          },
+          "digital_template": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Marcador BIOMETRIA_LOCAL_NAO_COLETADA ou DEMONSTRACAO_SEM_BIOMETRIA, nunca um template biométrico."
+          },
+          "assinatura_svg": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300,
+            "description": "Nome legado: agora armazena sha256:<hash do SVG gerado de coordenadas>, não o SVG."
+          },
+          "assinatura_digital_orgao": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+            "maxLength": 1024,
+            "description": "RSA-SHA256 em base64; cobre os campos de identidade, versao e emissaoId"
+          }
+        }
+      },
+      "ResumoCartao": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "pattern": "^[0-9]{11}$",
+            "example": "12345678900"
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Maria Silva"
+          },
+          "idade": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 130,
+            "example": 72
+          },
+          "emissaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "ativo",
+              "bloqueado",
+              "substituido"
+            ]
+          }
+        }
+      },
+      "Erro": {
+        "type": "object",
+        "properties": {
+          "mensagem": {
+            "type": "string"
+          },
+          "sucesso": {
+            "type": "boolean",
+            "enum": [
+              false
+            ],
+            "description": "Presente nas recusas da primeira etapa de autenticação."
+          },
+          "tentarEm": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Retomada após limite de fatores, em Unix epoch milissegundos."
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Correlação opcional; também disponível no cabeçalho X-Request-Id"
+          }
+        }
+      },
+      "Perfil": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "pattern": "^[0-9]{11}$",
+            "example": "12345678900"
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Maria Silva"
+          },
+          "idade": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 130,
+            "example": 72
+          }
+        }
+      },
+      "Sessao": {
+        "type": "object",
+        "required": [
+          "sucesso",
+          "token",
+          "perfil",
+          "expiraEm"
+        ],
+        "properties": {
+          "sucesso": {
+            "type": "boolean"
+          },
+          "token": {
+            "type": "string"
+          },
+          "perfil": {
+            "$ref": "#/components/schemas/Perfil"
+          },
+          "expiraEm": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Instante de expiração em milissegundos desde Unix epoch"
+          },
+          "credencialDispositivo": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "Retornada somente ao registrar com PIN. Cliente deve guardá-la exclusivamente em armazenamento protegido por autenticação do sistema, nunca AsyncStorage/web."
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Verificar disponibilidade da persistência",
+        "description": "No servidor MySQL executa SELECT 1. Não autentica cidadão nem certifica câmera, NFC, biometria ou integridade de todas as coletas.",
+        "responses": {
+          "200": {
+            "description": "Persistência disponível",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistência indisponível",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "mensagem"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "indisponivel"
+                      ]
+                    },
+                    "mensagem": {
+                      "type": "string",
+                      "example": "Banco de dados indisponível."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/emissao": {
+      "post": {
+        "summary": "Emitir cartão com foto, assinatura desenhada e PIN",
+        "description": "Toda emissão recebe UUID novo. Cartão anterior, suas sessões e credenciais de aparelho ficam inválidos. Corpo limitado a 64 KB; RSA/canonicalizador preservados.",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Emissao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Novo cartão assinado",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cadastro inválido",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite do endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/emissao/foto": {
+      "post": {
+        "summary": "Enviar foto privada de uma emissão",
+        "description": "Autorização administrativa é conferida antes do parser de 3 MB. Imagem decodificada limitada a 2 MB, formato/dimensões verificados. Até 50 pendências; limpeza de expiradas ao iniciar ou operar o repositório.",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Foto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Referência de uso único",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenciaFoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato inválido",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Foto ou corpo grande demais",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Muitas fotos pendentes",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/usuarios": {
+      "get": {
+        "summary": "Listar histórico de emissões sem credenciais assinadas",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumos dos cartões v2",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResumoCartao"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Consulta inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cartoes/{emissaoId}": {
+      "get": {
+        "summary": "Responsável recupera cartão ativo para a demonstração",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "emissaoId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cartão ativo",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identificador inválido",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cartão não encontrado",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cartão bloqueado ou substituído",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cartoes/{emissaoId}/bloquear": {
+      "post": {
+        "summary": "Bloquear cartão e revogar suas sessões",
+        "description": "Operação idempotente; cartão substituído permanece substituído. Sessões são recusadas na próxima chamada protegida.",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "emissaoId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado atual",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "emissaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "estado": {
+                      "type": "string",
+                      "enum": [
+                        "ativo",
+                        "bloqueado",
+                        "substituido"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identificador inválido",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cartão não encontrado",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite do endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cartoes/{emissaoId}/coleta": {
+      "get": {
+        "summary": "Consultar somente metadados da coleta",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "emissaoId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metadados privados",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coleta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identificador inválido",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Coleta não encontrada",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/autenticar-nfc": {
+      "post": {
+        "summary": "Iniciar verificação com CPF e cartão ativo",
+        "description": "Esta etapa nunca emite JWT. É necessário confirmar o segundo fator.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cpfDigitado",
+                  "dadosChip"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "cpfDigitado": {
+                    "type": "string",
+                    "pattern": "^[0-9]{11}$",
+                    "example": "12345678900"
+                  },
+                  "dadosChip": {
+                    "$ref": "#/components/schemas/Chip"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Desafio de 2 minutos",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Desafio"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON em formato inválido",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Cartão recusado ou precisa de reemissão",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite do endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Muitos desafios pendentes",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/autenticar-confirmar": {
+      "post": {
+        "summary": "Confirmar PIN ou credencial protegida do aparelho",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Confirmacao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessão de 15 minutos",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Sessao"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Escolha inválida de fator",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Fator incorreto, desafio vencido/consumido ou cartão revogado",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Uma confirmação já reservou este desafio; aguarde sua resposta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite do endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Tentativas limitadas por emissão; Retry-After informa a espera",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Retry-After": {
+                "description": "Segundos até uma nova tentativa; pelo menos 1.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/perfil": {
+      "get": {
+        "summary": "Consultar perfil com sessão válida e cartão ativo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Perfil"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão expirada, cartão bloqueado ou substituído",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}
