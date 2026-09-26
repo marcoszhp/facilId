@@ -72,6 +72,9 @@ test('emissão pode ser usada no mesmo aparelho e 401 remove acesso e volta ao l
   fireEvent.changeText(screen.getByLabelText('Confirme o PIN'), '123456');
   fireEvent.press(screen.getByRole('button', { name: 'Usar assinatura fictícia' }));
   fireEvent.press(screen.getByRole('button', { name: 'Gerar cartão' }));
+  const confirmarEmissao = await screen.findByRole('button', { name: 'Confirmar' });
+  await waitFor(() => expect(confirmarEmissao.props.accessibilityState.disabled).toBe(false));
+  fireEvent.press(confirmarEmissao);
   fireEvent.press(await screen.findByRole('button', { name: 'Usar este cartão na demonstração' }));
   expect(screen.getByText('Informe seu CPF')).toBeTruthy();
   expect(screen.getByLabelText('Seu CPF').props.value).toBe(cartao.cpf);
