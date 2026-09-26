@@ -4,10 +4,15 @@ Protótipo escolar de emissão e autenticação com CPF + cartão JSON assinado 
 
 ## Instalar e demonstrar no computador
 
-Pré-requisitos: Node.js 22.13+ (validado neste ambiente com 24), npm e navegador. Na pasta raiz:
+Pré-requisitos: Node.js 22.13+ (validado neste ambiente com 24), npm, navegador e XAMPP com **MySQL iniciado** no painel. A instalação do XAMPP validada usa MariaDB 10.4.32, compatível com o driver MySQL usado aqui. Na pasta raiz:
 
 ```powershell
 npm install
+if (!(Test-Path backend/.env)) { Copy-Item backend/.env.example backend/.env }
+npm run db:setup
+npm run db:check
+# Se você já tem cartões em backend/.local/usuarios.json, com a API parada:
+npm run db:migrate
 npm run setup
 npm run dev
 ```
@@ -28,7 +33,7 @@ npm run web
 
 Abra http://localhost:8081. API: http://localhost:3000, Swagger: http://localhost:3000/docs. O esquema também está em `/openapi.json`.
 
-O setup gera RSA em `backend/.local/keys`. Emita exemplos pela área do responsável, escolhendo um PIN de 6 números. Opcionalmente, defina a variável `DEMO_PIN` antes do setup para gerar os dois exemplos fictícios Maria Silva e José Santos; não existe PIN padrão. Limpe essa variável depois. Repetir setup preserva chaves e cartões, inclusive bloqueados, e não migra cartões antigos silenciosamente. Os cartões ficam em `backend/.local/usuarios.json`. A listagem `/api/usuarios` exige autorização e retorna somente resumos. Os segredos de sessão e administração são gerados em `backend/.local/jwt.secret` e `backend/.local/admin.token`; podem ser substituídos por `JWT_SECRET` e `ADMIN_TOKEN`, respectivamente, com pelo menos 32 caracteres. Nunca versionar `.local/`.
+O setup gera ou reutiliza RSA em `backend/.local/keys`. Emita exemplos pela área do responsável, escolhendo um PIN de 6 números. Opcionalmente, defina a variável `DEMO_PIN` antes do setup para gerar os dois exemplos fictícios Maria Silva e José Santos; não existe PIN padrão. Limpe essa variável depois. Repetir setup preserva chaves e cartões, inclusive bloqueados, e não migra cartões antigos silenciosamente. Os cartões e seus estados ficam no banco **facilid**. A listagem `/api/usuarios` exige autorização e retorna somente resumos. Os segredos de sessão e administração são gerados em `backend/.local/jwt.secret` e `backend/.local/admin.token`; podem ser substituídos por `JWT_SECRET` e `ADMIN_TOKEN`, respectivamente, com pelo menos 32 caracteres. Nunca versionar `.local/` nem `.env`.
 
 1. Abra **Área do responsável**. Abra o arquivo `backend/.local/admin.token` localmente no editor e copie a chave para o campo administrativo. Ela fica somente na memória desta tela; não compartilhe a chave com cidadãos nem a inclua em capturas de tela.
 2. Entre na área administrativa, escolha **Usar modo demonstração sem câmera**, preencha dados fictícios e desenhe/confirme a assinatura ou toque em **Usar assinatura fictícia**. Escolha e confirme um PIN de 6 números e gere o cartão. O cidadão não consegue emitir, listar ou recuperar cartões sem a chave administrativa.
@@ -41,9 +46,32 @@ O setup gera RSA em `backend/.local/keys`. Emita exemplos pela área do respons�
 
 Cada cartão v2 recebe `emissaoId` UUID e `versao: 2` dentro da assinatura canônica. O repositório mantém o estado ativo, bloqueado ou substituído separadamente da credencial assinada. Bloquear ou reemitir invalida também as sessões daquele cartão na próxima consulta à API. O app retorna ao login ao receber 401 e usa o horário de expiração informado pelo servidor, com aviso prévio.
 
-**Migração dos dados antigos:** ao abrir um arquivo v1, o repositório preserva uma cópia exata em `usuarios.json.legado-v1.json` e os dados na seção `legados` do arquivo v2. Cartões v1 não têm identificador de emissão e precisam ser reemitidos pelo responsável. A migração não assina cartões novos automaticamente. O backup também contém credenciais e deve permanecer privado em `.local/`.
+**Migração dos dados antigos:** execute `npm run db:migrate` apenas na configuração inicial, com a API parada. O comando importa `usuarios.json` sem alterar nenhum byte da origem ou das chaves. Cartões v2 mantêm identificadores, assinaturas e estados; cartões v1 ficam em `facilid_legados` e precisam de nova emissão. A importação não cria PINs nem assina cartões novos automaticamente. Repetir a importação sobre o mesmo conteúdo não duplica registros; se o banco já tiver cartões novos, bloqueios ou outras diferenças, ela é recusada para evitar sobrescrever o estado atual. Sem arquivo de origem, o comando apenas informa que não há dados para importar.
 
 **Cartões v2 emitidos antes desta coleta também precisam de segunda via**, pois não têm assinatura capturada e PIN cadastrados. Nenhum PIN é criado automaticamente para credenciais antigas. Se esquecer o PIN ou perder o aparelho, peça ao responsável o bloqueio e uma nova emissão; isso invalida cartão, sessões e credenciais dos aparelhos antigos.
+
+## Banco MySQL do XAMPP
+
+O aplicativo continua falando com a API Node na porta 3000; somente o backend acessa o MySQL, normalmente na porta 3306. Apache não é necessário para a API: inicie-o se quiser consultar o banco pelo phpMyAdmin em `http://localhost/phpmyadmin`. Não altere registros de cartões manualmente durante a demonstração.
+
+As opções ficam no arquivo privado `backend/.env`, com o modelo em [backend/.env.example](backend/.env.example): `DB_CLIENT=mysql`, `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_NAME=facilid`, `DB_USER=root` e `DB_PASSWORD`. Root sem senha corresponde ao padrão local do XAMPP; se sua instalação usa senha, preencha-a ali. Variáveis já definidas no terminal têm precedência. `DATA_DIR` é relativo à pasta backend e mantém `.local` como padrão.
+
+`db:setup` cria o banco e as tabelas se estiverem ausentes. `db:check` confere conexão e estrutura. O servidor verifica a estrutura ao iniciar e não cria outro armazenamento se a conexão falhar. `/health` responde 503 se o banco ficar indisponível durante a execução. Para uso diário, basta iniciar MySQL no XAMPP, executar `npm run dev` e, em outro terminal, `npm run web`; não repita migração a cada inicialização.
+
+| Tabela | Conteúdo |
+| --- | --- |
+| `facilid_pessoas` | CPF usado para coordenar emissões da mesma pessoa. |
+| `facilid_cartoes` | Identidade assinada, identificador de emissão, ordem e estado ativo/bloqueado/substituído. |
+| `facilid_legados` | Cartões antigos preservados como histórico, sem liberação de acesso. |
+| `facilid_migracoes` | Registro da importação para impedir duplicação. |
+
+Emissão, segunda via e bloqueio usam transações. Um índice impede dois cartões ativos para o mesmo CPF; emissões simultâneas são coordenadas por pessoa. As consultas usam parâmetros. O esquema legível está em [schema-mysql.sql](backend/src/db/schema-mysql.sql); o comando de preparo já o aplica, sem importação manual pelo phpMyAdmin.
+
+Fotos, desenhos, fatores de acesso e suas chaves continuam cifrados em `backend/.local/coletas`; não são movidos ao SQL. Para recuperar o sistema, faça backup privado **do banco e de toda a pasta `.local`**, com a API parada, mantendo também a configuração de conexão. O SQL contém CPF e identidade, sem criptografia de aplicação; o acesso ao XAMPP e ao computador deve ser restrito. Para uso fora da demonstração local, use usuário de banco com permissões mínimas e configuração própria, em vez da conta root do XAMPP.
+
+Para uma demonstração sem XAMPP, escolha explicitamente `DB_CLIENT=json` em `backend/.env`. Nesse modo, os cartões ficam em `usuarios.json`; o adaptador JSON preserva a migração v1 em `usuarios.json.legado-v1.json`. Essa escolha não sincroniza bancos: voltar ao JSON depois de emitir no MySQL abre uma base separada e antiga. Mantenha um único backend em execução, inclusive com MySQL, pois coletas e desafios ainda dependem de arquivos e memória locais.
+
+Compatibilidade conferida na [documentação do mysql2](https://sidorares.github.io/node-mysql2/docs/examples/connections/create-pool) e na [documentação do XAMPP para Windows](https://www.apachefriends.org/faq_windows.html). Evidências desta integração em [VALIDACAO-MYSQL.md](VALIDACAO-MYSQL.md).
 
 ## Foto, assinatura e biometria
 
@@ -65,7 +93,7 @@ O backend guarda foto, SVG e índice de fatores cifrados com AES-256-GCM em `bac
 
 No aplicativo, a foto e o desenho ficam em memória durante a emissão e são limpos ao concluir ou sair. O arquivo temporário criado pela câmera nativa é removido após a captura, inclusive se a resposta chegar após sair da tela. Uploads sem emissão expiram após 15 minutos e são removidos no próximo acesso ao repositório ou reinício; não há temporizador que apague arquivos com o servidor desligado. Coletas já emitidas permanecem para o histórico, inclusive de cartões bloqueados ou substituídos. Ainda falta uma política operacional de exclusão e retenção: encerre demonstrações com dados reais de acordo com o combinado com os voluntários. Não apague chaves isoladamente, pois isso torna as coletas ilegíveis.
 
-Use HTTPS fora do teste local. Este protótipo roda em uma única instância; dados e fatores em arquivos separados ainda exigiriam transações, gestão individual de administradores, recuperação de conta, auditoria e gestão de chaves para uso real. O servidor confirma a posse da credencial do aparelho, sem atestado criptográfico de hardware nem garantia contra um cliente comprometido.
+Use HTTPS fora do teste local. Este protótipo roda em uma única instância; as transações MySQL abrangem os cartões, mas não tornam atômicos o banco e os arquivos de coletas juntos. A aplicação remove a coleta se o salvamento falhar, porém uma interrupção abrupta ainda exige recuperação operacional. Gestão individual de administradores, recuperação de conta, auditoria e gestão de chaves continuam necessárias para uso real. O servidor confirma a posse da credencial do aparelho, sem atestado criptográfico de hardware nem garantia contra um cliente comprometido.
 
 ## O que este protótipo realmente comprova
 
@@ -113,9 +141,13 @@ A [NTAG216 tem 888 bytes de memória de usuário](https://www.nxp.com/products/N
 ```powershell
 npm run check
 npm run check:watch
+# Com MySQL local iniciado, inclui testes reais em bancos temporários:
+npm run check:mysql
 ```
 
 O primeiro comando executa uma rodada completa. O segundo observa arquivos e repete tipos, testes e builds após cada alteração, até Ctrl+C. Resultados em `reports/latest.json`, históricos `reports/cycle-*.json` e logs por etapa. Falhas têm código de saída diferente de zero. Corrija a causa indicada no log, salve e aguarde nova rodada. O observador não altera código automaticamente; o agente/desenvolvedor faz a correção e acompanha o resultado. Não confundir repetição de testes com reparo autônomo.
+
+`npm run test:mysql` executa somente a integração com banco real. Ela cria e remove bancos artificiais `facilid_test_<processo>_<id>`; nunca seleciona `facilid` nem lê o `.env` privado. Se o MySQL local exigir senha ou outra porta, forneça `DB_USER`, `DB_PASSWORD` e `DB_PORT` como variáveis do terminal de teste. O usuário precisa poder criar/remover esses bancos de teste. A suíte recusa hosts externos; somente localhost é permitido. Para repetir o ciclo completo ao salvar, use `npm run check:watch -- --mysql`.
 
 Comandos individuais: `npm test` (backend e mobile), `npm test -w backend`, `npm test -w mobile`, `npm run typecheck`, `npm run build`. Os testes do backend usam diretórios temporários isolados, sem modificar os dados da demonstração. Os testes das telas usam Jest Expo 54 e React Native Testing Library 13.3.3, com React Test Renderer fixado em 19.1.0, igual ao React do projeto. Câmera e transporte NFC são simulados nesses testes; eles não certificam hardware.
 
@@ -129,10 +161,10 @@ backend/src/
   routes/                 emissão, login e perfil protegido
   middleware/             sessão autenticada e verificação do estado do cartão
   services/               RSA, JWT e criação de cartões
-  repositories/           interface e armazenamento JSON
+  repositories/           interface, MySQL, JSON opcional e coletas cifradas
   schemas/                validação Zod
   docs/                   OpenAPI e Swagger
-  db/                     seed de duas pessoas fictícias
+  db/                     esquema MySQL, migração, conexão e seed opcional
 backend/tests/            integração e contrato com mobile
 mobile/
   App.tsx, app.json
@@ -146,10 +178,10 @@ scripts/verify.mjs        verificação contínua com relatórios
 
 ## Limites de validação
 
-Compilar e passar testes automatizados não comprova leitura/gravação em hardware. NFC, câmera, voz e vibração precisam do teste manual acima em dispositivo compatível. A build web não substitui uma compilação Android. O armazenamento JSON atende uma única instância local, não uso concorrente de múltiplos servidores. Copiar o JSON copia a credencial; este protótipo demonstra assinatura e autenticação, não resistência à clonagem.
+Compilar e passar testes automatizados não comprova leitura/gravação em hardware. NFC, câmera, voz e vibração precisam do teste manual acima em dispositivo compatível. A build web não substitui uma compilação Android. A integração foi exercitada com MariaDB 10.4.32 do XAMPP; não foi executada contra uma instalação separada do MySQL 8. O sistema ainda atende uma única instância local. Copiar o JSON do cartão copia a credencial; este protótipo demonstra assinatura e autenticação, não resistência à clonagem.
 
 ## Pontos preparados para a Etapa 2
 
-O middleware `exigirSessao` pode proteger futuras rotas de agendamento, verificando o estado do cartão a cada chamada. A interface `UsuariosRepository` concentra as operações que deverão virar transações numa futura implementação SQLite. Toda requisição recebe `X-Request-Id`, inclusive erros controlados; o tratador geral também inclui esse identificador no corpo. Não foi instalado um coletor de logs nem implementado agendamento. Um futuro registrador deve aceitar somente identificador e código de erro, sem CPF, conteúdo do cartão, chave administrativa ou JWT.
+O middleware `exigirSessao` pode proteger futuras rotas de agendamento, verificando o estado do cartão a cada chamada. A interface `UsuariosRepository` agora possui implementação MySQL com operações assíncronas e transações, além do JSON opcional. Toda requisição recebe `X-Request-Id`, inclusive erros controlados; o tratador geral também inclui esse identificador no corpo. Não foi instalado um coletor de logs nem implementado agendamento. Um futuro registrador deve aceitar somente identificador e código de erro, sem CPF, conteúdo do cartão, chave administrativa ou JWT.
 
-Evidências, checklist e limitações desta rodada estão em [VALIDACAO.md](VALIDACAO.md). Referências de compatibilidade: [arquiteturas no Expo](https://docs.expo.dev/guides/new-architecture/), [versões do NFC Manager](https://github.com/revtel/react-native-nfc-manager#version-notes) e [dependências da Testing Library 13.3.3](https://github.com/callstack/react-native-testing-library/blob/v13.3.3/package.json).
+Evidências atuais em [VALIDACAO-MYSQL.md](VALIDACAO-MYSQL.md). As rodadas anteriores permanecem como histórico em [VALIDACAO-BIOMETRIA.md](VALIDACAO-BIOMETRIA.md) e [VALIDACAO.md](VALIDACAO.md). Referências de compatibilidade: [arquiteturas no Expo](https://docs.expo.dev/guides/new-architecture/), [versões do NFC Manager](https://github.com/revtel/react-native-nfc-manager#version-notes) e [dependências da Testing Library 13.3.3](https://github.com/callstack/react-native-testing-library/blob/v13.3.3/package.json).

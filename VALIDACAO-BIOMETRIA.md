@@ -1,5 +1,7 @@
 # Validação — foto, assinatura e confirmação de acesso
 
+Registro histórico desta etapa. A integração posterior com XAMPP e os resultados atuais estão em [VALIDACAO-MYSQL.md](VALIDACAO-MYSQL.md).
+
 Implementação no projeto existente, a partir do prompt de coleta autorizado pelo usuário. O módulo de assinatura RSA (`backend/src/services/assinatura.service.ts`) permaneceu literalmente inalterado. A etapa anterior foi preservada em [VALIDACAO.md](VALIDACAO.md).
 
 ## Resultado e reprodução

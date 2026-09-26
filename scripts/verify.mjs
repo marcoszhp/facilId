@@ -6,13 +6,18 @@ import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const watch=process.argv.includes('--watch');
 const checks=[['types','npm run typecheck'],['tests','npm test'],['build','npm run build']];
+if(process.argv.includes('--mysql'))checks.splice(2,0,['mysql','npm run test:mysql']);
 const ignored=new Set(['node_modules','.npm-cache','.expo','dist','.local','reports','.git','android','ios']);
+const rootFiles=new Set(['backend','mobile','scripts','package.json','package-lock.json','.gitignore','.npmrc']);
 let stopping=false,active;
 process.on('SIGINT',()=>{stopping=true;if(active)active.kill();});
 process.on('SIGTERM',()=>{stopping=true;if(active)active.kill();});
 async function fingerprint(dir=root){
   const hash=createHash('sha256');
   for(const item of (await readdir(dir,{withFileTypes:true})).sort((a,b)=>a.name.localeCompare(b.name))){
+    // Outros projetos/ZIPs do usuário podem estar ao lado do FácilID. Não são fontes deste ciclo.
+    if(dir===root&&!rootFiles.has(item.name)&&!item.name.endsWith('.md'))continue;
+    if(item.name==='.env')continue;
     if(ignored.has(item.name)||item.isSymbolicLink())continue;
     const file=path.join(dir,item.name);hash.update(file);
     if(item.isDirectory())hash.update(await fingerprint(file));else hash.update(await readFile(file));

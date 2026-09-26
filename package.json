@@ -7,7 +7,7 @@
     "mobile"
   ],
   "scripts": {
-    "setup": "npm run generate-keys -w backend && npm run seed -w backend",
+    "setup": "npm run seed -w backend",
     "dev": "npm run dev -w backend",
     "mobile": "npm run start -w mobile",
     "web": "npm run web -w mobile",
@@ -15,7 +15,12 @@
     "check": "node scripts/verify.mjs",
     "check:watch": "node scripts/verify.mjs --watch",
     "typecheck": "npm run typecheck --workspaces",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "db:setup": "npm run db:setup -w backend",
+    "db:check": "npm run db:check -w backend",
+    "db:migrate": "npm run db:migrate -w backend",
+    "test:mysql": "npm run test:mysql -w backend",
+    "check:mysql": "node scripts/verify.mjs --mysql"
   },
   "allowScripts": {
     "@scarf/scarf": true,

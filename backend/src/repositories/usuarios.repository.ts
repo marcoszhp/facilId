@@ -10,18 +10,20 @@ export const registroCartaoSchema = z.object({
 export type RegistroCartao = z.infer<typeof registroCartaoSchema>;
 export type ResumoCartao = Pick<Chip, 'emissaoId' | 'cpf' | 'nome' | 'idade'> & {estado: RegistroCartao['estado']};
 const legadoSchema = chipSchema.omit({versao: true, emissaoId: true});
-const arquivoSchema = z.object({
+export const arquivoSchema = z.object({
   versao: z.literal(2), cartoes: registroCartaoSchema.array(), legados: legadoSchema.array()
 }).strict();
-type Arquivo = z.infer<typeof arquivoSchema>;
+export type Arquivo = z.infer<typeof arquivoSchema>;
 
-// Contrato substituível por um repositório transacional (por exemplo SQLite).
+export type Awaitable<T> = T | Promise<T>;
+
+// Mantém compatibilidade com o JSON local e com repositórios de banco assíncronos.
 export interface UsuariosRepository {
-  listar(): ResumoCartao[];
-  buscar(cpf: string): Chip | undefined;
-  buscarEmissao(emissaoId: string): RegistroCartao | undefined;
-  salvar(chip: Chip): void;
-  bloquear(emissaoId: string): RegistroCartao | undefined;
+  listar(): Awaitable<ResumoCartao[]>;
+  buscar(cpf: string): Awaitable<Chip | undefined>;
+  buscarEmissao(emissaoId: string): Awaitable<RegistroCartao | undefined>;
+  salvar(chip: Chip): Awaitable<void>;
+  bloquear(emissaoId: string): Awaitable<RegistroCartao | undefined>;
 }
 
 // Instância única por processo. Cada mutação persiste antes de trocar o estado em memória.

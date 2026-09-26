@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { swagger } from './docs/swagger';
-import { JsonUsuariosRepository } from './repositories/usuarios.repository';
+import { JsonUsuariosRepository, UsuariosRepository } from './repositories/usuarios.repository';
 import { assinaturaService, carregarChaves } from './services/assinatura.service';
 import { authService } from './services/auth.service';
 import { emissaoRoutes } from './routes/emissao.routes';
@@ -12,8 +12,8 @@ import { randomUUID } from 'node:crypto';
 import { carregarAdminToken } from './services/admin.service';
 import { ArquivosColetasRepository } from './repositories/coletas.repository';
 import { ErroColeta } from './services/coleta.service';
-export function createApp(dataDir:string,secret:string,adminToken=carregarAdminToken(dataDir)) {
-  const app=express(); const repo=new JsonUsuariosRepository(path.join(dataDir,'usuarios.json'));
+export function createApp(dataDir:string,secret:string,adminToken=carregarAdminToken(dataDir),options?:{repo?:UsuariosRepository;verificarPersistencia?:()=>Promise<void>}) {
+  const app=express(); const repo=options?.repo ?? new JsonUsuariosRepository(path.join(dataDir,'usuarios.json'));
   const assinatura=assinaturaService(carregarChaves(path.join(dataDir,'keys')));
   const coletas=new ArquivosColetasRepository(path.join(dataDir,'coletas'));
   app.disable('x-powered-by');
@@ -22,7 +22,10 @@ export function createApp(dataDir:string,secret:string,adminToken=carregarAdminT
   // Autorização vem antes dos parsers maiores; nenhuma foto usa o parser geral.
   app.use('/api',emissaoRoutes(repo,assinatura,adminToken,coletas));
   app.use(express.json({limit:'16kb'}));
-  app.get('/health',(_req,res)=>res.json({status:'ok'}));
+  app.get('/health',async (_req,res)=>{
+    try {await options?.verificarPersistencia?.();res.json({status:'ok'});}
+    catch {res.status(503).json({status:'indisponivel',mensagem:'Banco de dados indisponível.'});}
+  });
   app.get('/openapi.json',(_req,res)=>res.json(swagger));
   app.use('/docs',swaggerUi.serve,swaggerUi.setup(swagger));
   app.use('/api',autenticacaoRoutes(repo,assinatura,authService(secret),coletas));

@@ -16,18 +16,18 @@ export function emissaoRoutes(repo: UsuariosRepository, assinatura: ReturnType<t
     if (!dados.success) {res.status(400).json({mensagem: 'Envie uma foto JPEG ou PNG de até 2 MB.'}); return;}
     res.status(201).json(coletas.guardarFoto(validarFoto(dados.data.base64, dados.data.mimeType), dados.data.mimeType));
   });
-  router.post('/emissao', administrador, json({limit: '64kb'}), (req, res) => {
+  router.post('/emissao', administrador, json({limit: '64kb'}), async (req, res) => {
     const data = emissaoSchema.safeParse(req.body);
     if (!data.success) {res.status(400).json({mensagem: 'Confira os dados, o PIN de 6 números e a assinatura desenhada. No modo real, confirme o consentimento e capture a foto.'}); return;}
-    res.status(201).json(emitirPessoa(data.data, assinatura, repo, coletas));
+    res.status(201).json(await emitirPessoa(data.data, assinatura, repo, coletas));
   });
-  router.get('/usuarios', administrador, (req, res) => {
+  router.get('/usuarios', administrador, async (req, res) => {
     if (Object.keys(req.query).length) {res.status(400).json({mensagem: 'Esta consulta não aceita parâmetros.'}); return;}
-    res.json(repo.listar());
+    res.json(await repo.listar());
   });
-  router.get('/cartoes/:emissaoId', administrador, (req, res) => {
+  router.get('/cartoes/:emissaoId', administrador, async (req, res) => {
     if (!z.string().uuid().safeParse(req.params.emissaoId).success) {res.status(400).json({mensagem: 'Identificador de cartão inválido.'}); return;}
-    const registro = repo.buscarEmissao(req.params.emissaoId as string);
+    const registro = await repo.buscarEmissao(req.params.emissaoId as string);
     if (!registro) {res.status(404).json({mensagem: 'Cartão não encontrado.'}); return;}
     if (registro.estado !== 'ativo') {res.status(409).json({mensagem: 'Este cartão está bloqueado ou foi substituído. Emita um novo cartão.'}); return;}
     res.json(registro.chip);
@@ -38,9 +38,9 @@ export function emissaoRoutes(repo: UsuariosRepository, assinatura: ReturnType<t
     if (!coleta) {res.status(404).json({mensagem: 'Coleta não encontrada. Cartões antigos precisam de reemissão.'}); return;}
     res.json(coleta);
   });
-  router.post('/cartoes/:emissaoId/bloquear', administrador, (req, res) => {
+  router.post('/cartoes/:emissaoId/bloquear', administrador, async (req, res) => {
     if (!z.string().uuid().safeParse(req.params.emissaoId).success) {res.status(400).json({mensagem: 'Identificador de cartão inválido.'}); return;}
-    const registro = repo.bloquear(req.params.emissaoId as string);
+    const registro = await repo.bloquear(req.params.emissaoId as string);
     if (!registro) {res.status(404).json({mensagem: 'Cartão não encontrado.'}); return;}
     res.json({emissaoId: registro.chip.emissaoId, estado: registro.estado});
   });
