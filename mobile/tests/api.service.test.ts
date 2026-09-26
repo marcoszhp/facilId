@@ -4,10 +4,12 @@ import { cadastroDemo, cartao, desafio, sessao } from './helpers';
 
 const get = jest.fn();
 const post = jest.fn();
+const patch = jest.fn();
 beforeEach(() => {
   get.mockReset();
   post.mockReset();
-  jest.spyOn(axios, 'create').mockReturnValue({ get, post } as unknown as AxiosInstance);
+  patch.mockReset();
+  jest.spyOn(axios, 'create').mockReturnValue({ get, post, patch } as unknown as AxiosInstance);
 });
 
 test('login valida o cartão comum e encaminha AbortSignal ao transporte', async () => {
@@ -20,6 +22,29 @@ test('login valida o cartão comum e encaminha AbortSignal ao transporte', async
   expect(post).toHaveBeenCalledWith('/api/autenticar-nfc', {
     cpfDigitado: cartao.cpf, dadosChip: cartao,
   }, expect.objectContaining({ signal: controller.signal }));
+});
+
+test('cidadão agenda e consulta com JWT e cancelamento sem enviar CPF no corpo',async()=>{
+  const api=criarApi('http://localhost:3000'),{signal}=new AbortController();
+  const horario='2026-10-01T12:00:00.000Z',retorno={id:'atendimento-de-teste',horario};
+  get.mockResolvedValue({data:{horarios:[horario]}});post.mockResolvedValue({data:retorno});
+  await expect(api.horarios('jwt-ficticio',signal)).resolves.toEqual({horarios:[horario]});
+  await expect(api.agendar(horario,'jwt-ficticio',signal)).resolves.toEqual(retorno);
+  get.mockResolvedValue({data:[retorno]});await expect(api.meusAtendimentos('jwt-ficticio',signal)).resolves.toEqual([retorno]);
+  const config={headers:{Authorization:'Bearer jwt-ficticio'},signal};
+  expect(get).toHaveBeenCalledWith('/api/atendimentos/horarios',config);
+  expect(get).toHaveBeenCalledWith('/api/atendimentos/meus',config);
+  expect(post).toHaveBeenCalledWith('/api/atendimentos',{horario},config);
+});
+
+test('gestão de atendimento usa somente credencial administrativa e codifica o identificador',async()=>{
+  const api=criarApi('http://localhost:3000'),{signal}=new AbortController();
+  get.mockResolvedValue({data:[]});patch.mockResolvedValue({data:{status:'confirmado'}});
+  await expect(api.atendimentos('admin-ficticio',signal)).resolves.toEqual([]);
+  await expect(api.atualizarAtendimento('id/com barra','confirmado','admin-ficticio',signal)).resolves.toEqual({status:'confirmado'});
+  const config={headers:{'X-Admin-Token':'admin-ficticio'},signal};
+  expect(get).toHaveBeenCalledWith('/api/atendimentos',config);
+  expect(patch).toHaveBeenCalledWith('/api/atendimentos/id%2Fcom%20barra/status',{status:'confirmado'},config);
 });
 
 test('cartão malformado não chega ao transporte de autenticação', async () => {

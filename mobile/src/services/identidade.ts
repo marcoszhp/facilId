@@ -8,6 +8,8 @@ export type Desafio={desafioId:string;expiraEm:number};
 export type Confirmacao={desafioId:string;pin?:string;credencialDispositivo?:string;registrarDispositivo?:boolean};
 export type Sessao={sucesso:true;token:string;perfil:Perfil;expiraEm:number};
 export type ResumoCartao=Perfil&{emissaoId:string;estado:'ativo'|'bloqueado'|'substituido'};
+export type StatusAtendimento='agendado'|'confirmado'|'concluido';
+export type Atendimento={id:string;protocolo:string;cpf:string;nome:string;horario:string;status:StatusAtendimento;criadoEm:string;atualizadoEm:string};
 export const normalizarCpf=(cpf:string)=>cpf.replace(/[.\-\s]/g,'');
 // NFC, QR e texto passam exatamente pela mesma validação antes da API.
 export function lerIdentidade(texto:string,cpf:string):Chip {
