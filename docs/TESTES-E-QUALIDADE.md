@@ -13,6 +13,7 @@ Os testes verificam regras de autenticação, contratos, persistência, interfac
 | Validação integrada do código-base em **2026-09-26**, commit `1a37bcfc0405eae475b5d2d7fe171431b6b57475` | **203 testes aprovados: 115 backend + 78 mobile + 10 integração SQL**; tipos e builds backend/web aprovados. Registro: [VALIDACAO-MYSQL.md](../VALIDACAO-MYSQL.md). É evidência histórica, anterior à documentação profissional. |
 | Verificação focal desta rodada documental, após atualização do contrato Swagger | **26 testes de `backend/tests/autenticacao.test.ts` aprovados** e compilação do backend aprovada. Não equivale à repetição dos 203 testes. |
 | Revisão documental em **2026-09-26** | **10 documentos, 193 links locais válidos e 10 caminhos OpenAPI**; contrato validado por Swagger Parser e conferido com a declaração compilada. Cinco diagramas Mermaid revisados como texto, sem validação por renderização. Registro local: `reports/documentation-validation.json`. |
+| Agendamentos simulados, 27/09/2026 | **265 testes: 131 backend +119 mobile +15 SQL**, tipos e builds aprovados. `reports/poslogin-item3.json`; não inclui alterações posteriores do formulário em etapas. |
 | Hardware e acessibilidade assistiva | **Pendentes de execução manual** em ambiente identificado. Os cenários abaixo são critérios esperados, não resultados realizados. |
 
 O ambiente SQL validado historicamente foi **MariaDB 10.4.32 do XAMPP em Windows**. Não se deve atribuir essa evidência a um servidor MySQL 8 testado separadamente. As contagens são fotografias da versão indicada e precisam ser atualizadas a partir de uma execução real quando o código mudar.
@@ -80,6 +81,8 @@ Implementação e proteção da suíte: [backend/tests/mysql.integration.mysql.t
 | [backend/tests/mysql-config.test.ts](../backend/tests/mysql-config.test.ts) | Configuração e identificadores; pool; encerramento; equivalência do SQL legível com o schema de código; prontidão e mensagens sanitizadas. |
 | [backend/tests/mysql.integration.mysql.ts](../backend/tests/mysql.integration.mysql.ts) | Emissão/PIN/perfil reais no banco; reconexão; bloqueio; concorrência para CPF novo/existente; parametrização; rollback; migração idempotente; divergências; legado. |
 
+Novos cenários de agendamento: [atendimentos.test.ts](../backend/tests/atendimentos.test.ts) cobre grade Brasília, sessão, isolamento, transições, concorrência JSON e falha de escrita. A suíte SQL acrescenta disputa real pelo horário, reconexão/segunda via, protocolo/FK/UTC, preparo aditivo e rollback de status.
+
 ### Mobile
 
 | Arquivo | Principais verificações |
@@ -96,6 +99,8 @@ Implementação e proteção da suíte: [backend/tests/mysql.integration.mysql.t
 | [mobile/tests/ControleAudio.test.tsx](../mobile/tests/ControleAudio.test.tsx), [mobile/tests/feedback.test.ts](../mobile/tests/feedback.test.ts) | Parada, inicialização e conclusão da fala, erro e instruções tardias. |
 
 Fixtures compartilhadas: [backend/tests/helpers.ts](../backend/tests/helpers.ts) e [mobile/tests/helpers.ts](../mobile/tests/helpers.ts). Consulte-as antes de inventar outro formato de cartão ou um atalho que contorne a autenticação real do teste.
+
+Os componentes de agendamento têm cobertura em [Atendimentos.test.tsx](../mobile/tests/Atendimentos.test.tsx), com confirmação, cancelamento, recuperação de protocolo, falha de rede, 401, respostas tardias e gestão de status. Saída e expiração são verificadas também em SucessoScreen/EmissorScreen.
 
 ## 6. Como interpretar o ciclo de verificação
 

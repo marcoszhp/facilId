@@ -6,7 +6,7 @@
 
 FácilID / AcessoSênior é um protótipo escolar para estudar uma experiência de acesso compreensível para idosos e pessoas com baixo letramento digital. O responsável emite uma identidade digital assinada; o cidadão informa CPF, apresenta o cartão e confirma o acesso. Instruções faladas, mensagens claras e alternativas sem hardware permitem demonstrar o fluxo em sala.
 
-O produto atual termina na sessão autenticada e na consulta do perfil. Não existe integração com órgãos públicos, cadastro civil ou prestação efetiva de serviços municipais. CPF é validado pelo formato de onze dígitos para permitir massa fictícia; isso não comprova sua existência ou titularidade.
+Após entrar, o cidadão consulta o perfil e agenda atendimento simulado na secretaria, recebendo protocolo e acompanhando sua situação. Não existe integração com órgãos públicos, cadastro civil ou prestação efetiva de serviços municipais. CPF é validado pelo formato de onze dígitos para permitir massa fictícia; isso não comprova sua existência ou titularidade.
 
 ## Atores
 
@@ -68,7 +68,7 @@ O cartão pode ser copiado. Sua assinatura protege contra alteração sem a chav
 | Etapa | Possível evolução | Condição de aceite antes de anunciar disponibilidade |
 | --- | --- | --- |
 | Próxima validação | Usabilidade com idosos, sensores e build Android completa. | Roteiro executado, ambiente/aparelhos registrados, resultados e falhas reproduzíveis. |
-| Propósito funcional | Agendamentos e solicitações municipais fictícias. | Escopo simples, rotas protegidas e estado persistido; identificação clara de simulação. |
+| Evolução funcional | Solicitações municipais fictícias e remarcação de atendimentos. | Escopo adicional ainda não implementado; os agendamentos simples da secretaria já têm rotas protegidas e estado persistido. |
 | Operação ampliada | Administradores individuais, auditoria, retenção/exclusão e recuperação. | Política definida, testes de abuso e restauração, direitos de acesso revisados. |
 | Uso real | Infraestrutura, proteção de dados e avaliação independente. | Requisitos específicos, análise técnica/jurídica aplicável, testes e responsáveis definidos. |
 

@@ -1,6 +1,6 @@
 # FácilID / AcessoSênior — documentação do projeto
 
-**Edição documental 1.0 · 26 de setembro de 2026 · Protótipo escolar**
+**Documentação atualizada em 27 de setembro de 2026 · Protótipo escolar**
 
 O FácilID demonstra emissão de cartões assinados e autenticação acessível com CPF, cartão e confirmação por PIN ou credencial protegida pela biometria do aparelho. Esta documentação descreve o sistema implementado, seus procedimentos de uso e os limites que precisam ser considerados ao evoluí-lo.
 

@@ -6,7 +6,7 @@
 
 ## 1. Escopo da persistência
 
-O banco padrão chama-se `facilid`, configurável por `DB_NAME`. Guarda cartões assinados, estados, registros legados e controle de importação. Fotos, SVG completo, hashes de PIN e de credenciais de dispositivo permanecem em arquivos privados cifrados. Não existem tabelas de administradores, agendamentos ou serviços municipais.
+O banco padrão chama-se `facilid`, configurável por `DB_NAME`. Guarda cartões assinados, estados, registros legados, controle de importação e atendimentos simulados. Fotos, SVG completo, hashes de PIN e de credenciais de dispositivo permanecem em arquivos privados cifrados. Não existem contas individuais de administradores nem integração com serviços municipais reais.
 
 | Fonte | Papel |
 | --- | --- |
@@ -24,6 +24,7 @@ Todas as tabelas usam **InnoDB**, `utf8mb4` e collation padrão `utf8mb4_unicode
 ```mermaid
 erDiagram
   facilid_pessoas ||--o{ facilid_cartoes : possui
+  facilid_pessoas ||--o{ facilid_atendimentos : agenda
   facilid_pessoas {
     char cpf PK
   }
@@ -42,6 +43,16 @@ erDiagram
     timestamp criado_em
     char cpf_ativo UK
   }
+  facilid_atendimentos {
+    char id PK
+    char protocolo UK
+    char cpf FK
+    varchar nome
+    datetime horario UK
+    enum status
+    datetime criado_em
+    datetime atualizado_em
+  }
   facilid_legados {
     char conteudo_hash PK
     char cpf
@@ -55,7 +66,7 @@ erDiagram
   }
 ```
 
-O único relacionamento imposto por chave estrangeira é `facilid_cartoes.cpf → facilid_pessoas.cpf`. `facilid_legados` e `facilid_migracoes` são tabelas independentes; sem linha de relacionamento no diagrama. `emissao_id` também associa logicamente o cartão à coleta privada, sem uma FK entre SQL e arquivos.
+As chaves estrangeiras ligam `facilid_cartoes.cpf` e `facilid_atendimentos.cpf` a `facilid_pessoas.cpf`. Uma segunda via preserva os atendimentos da pessoa. `facilid_legados` e `facilid_migracoes` são tabelas independentes; sem linha de relacionamento no diagrama. `emissao_id` também associa logicamente o cartão à coleta privada, sem uma FK entre SQL e arquivos.
 
 ## 3. Dicionário de dados
 
@@ -106,6 +117,20 @@ Legados não são retornados como cartões ativos nem autenticam usuários. Prec
 
 Essa tabela controla importação de dados; não constitui ferramenta geral de versionamento de schema. Alterações futuras de DDL exigirão uma estratégia explícita de evolução.
 
+### `facilid_atendimentos`
+
+| Coluna | Tipo | Regra e significado |
+| --- | --- | --- |
+| `id` | `CHAR(36)` ASCII, `ascii_bin` | PK; UUID da reserva. |
+| `protocolo` | `CHAR(16)` ASCII, `ascii_bin` | UNIQUE `facilid_atendimento_protocolo`; formato `FID-` + 12 caracteres hexadecimais. |
+| `cpf` | `CHAR(11)` ASCII, `ascii_bin` | FK `facilid_atendimentos_pessoa`; índice `facilid_atendimentos_cpf`; obtido da sessão. |
+| `nome` | `VARCHAR(100)` | Nome da sessão no momento do agendamento. |
+| `horario` | `DATETIME(3)` | UTC; UNIQUE `facilid_atendimento_horario`, apenas uma reserva por horário. |
+| `status` | `ENUM('agendado','confirmado','concluido')` | Sequência validada pelo serviço. |
+| `criado_em`, `atualizado_em` | `DATETIME(3)` | Instantes UTC gerados pela aplicação; API converte para ISO UTC. |
+
+Esta tabela é adicionada por `npm run db:setup` em instalações existentes, sem recriar as tabelas anteriores. Não há migração de atendimentos JSON para SQL no importador legado; trocar adaptador continua sendo uma troca de base, não sincronização.
+
 ## 4. Consultas, transações e concorrência
 
 `MysqlUsuariosRepository` implementa `UsuariosRepository`. `listar()` devolve resumos em ordem de inserção; `buscar(cpf)` busca somente o ativo; `buscarEmissao(emissaoId)` devolve chip e estado. Dados vindos do banco são convertidos e validados por Zod. Valores de usuário entram por parâmetros; múltiplas instruções SQL estão desativadas no driver.
@@ -115,6 +140,8 @@ Essa tabela controla importação de dados; não constitui ferramenta geral de v
 **Bloqueio — `bloquear(emissaoId)`:** localiza o CPF, bloqueia pessoa e cartão nessa ordem, muda `ativo` para `bloqueado` e confirma. Cartões já substituídos permanecem substituídos; emissão inexistente retorna `undefined`. A mesma ordem de locks da emissão reduz conflitos.
 
 Essas transações protegem somente o SQL. `emitirPessoa()` grava a coleta privada antes do cartão e tenta removê-la se a emissão falhar. Não há commit atômico envolvendo banco e arquivos, nem suporte a várias instâncias com esse armazenamento privado.
+
+O `MysqlAtendimentosRepository` reserva com INSERT protegido por UNIQUE de horário e protocolo. A consulta anterior da grade não garante disponibilidade: uma disputa retorna409. Mudanças de status usam transação e `SELECT ... FOR UPDATE`, permitindo repetir o estado atual sem modificar a data. No modo JSON, `JsonAtendimentosRepository` serializa operações síncronas em uma instância e usa arquivo temporário + rename.
 
 ## 5. Preparo, conexão e validação
 

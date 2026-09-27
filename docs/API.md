@@ -15,6 +15,7 @@ API HTTP/JSON, base local padrão `http://127.0.0.1:3000`. O contrato OpenAPI 3.
 | Cidadão | `Authorization: Bearer <token>` apenas nas rotas de sessão. |
 | Identificadores | `emissaoId`, `fotoId`, `desafioId` são UUIDs. Não são intercambiáveis. |
 | Tempo | `expiraEm`, `coletadoEm`, `tentarEm` em milissegundos Unix; claim JWT `exp` em segundos. |
+| Tempo dos atendimentos | `horario`, `criadoEm`, `atualizadoEm` são strings ISO UTC canônicas, com milissegundos e `Z`; a interface apresenta horário de Brasília. |
 | Correlação | `X-Request-Id` em todas as respostas; `requestId` no corpo de erros do tratador geral. |
 | Limites de corpo | Foto 3 MB no parser/2 MB decodificada; emissão 64 KB; parser geral 16 KB. |
 | Normalização | Cliente remove pontos, hífen e espaços do CPF. API espera exatamente 11 números. Nome é aparado pelo schema de cadastro. |
@@ -95,6 +96,26 @@ Desafio bem-sucedido é consumido. Antes do JWT, o servidor relê o estado do ca
 ### GET `/api/perfil`
 
 Exige Bearer JWT. Saída 200: `Perfil`. 401 indica token inválido/expirado, cartão revogado ou coleta ausente. 500 indica falha de persistência, não falha de autenticação. Toda chamada revalida o estado do cartão; um JWT ainda dentro dos 15 minutos não ignora bloqueio.
+
+## Atendimentos simulados na secretaria
+
+`Atendimento` contém `{id,protocolo,cpf,nome,horario,status,criadoEm,atualizadoEm}`. O `id` é UUID; o protocolo tem formato `FID-` seguido de 12 caracteres hexadecimais maiúsculos. `status` é `agendado`, `confirmado` ou `concluido`. Nome e CPF vêm da sessão, nunca do corpo enviado pelo cidadão. O nome registra o titular no momento da reserva.
+
+| Método e rota | Autorização / entrada | Resposta de sucesso |
+| --- | --- | --- |
+| GET `/api/atendimentos/horarios` | JWT; sem query | 200 `{horarios:string[]}` com a grade disponível. |
+| POST `/api/atendimentos` | JWT; somente `{horario}` | 201 `Atendimento`, persistido com protocolo. |
+| GET `/api/atendimentos/meus` | JWT; sem query | 200 `Atendimento[]` somente do CPF autenticado, inclusive após nova entrada. |
+| GET `/api/atendimentos` | `X-Admin-Token`; sem query | 200 `Atendimento[]` para gestão. |
+| PATCH `/api/atendimentos/:id/status` | `X-Admin-Token`; somente `{status:"confirmado"}` ou `{status:"concluido"}` | 200 `Atendimento` atualizado. |
+
+A grade considera hoje e os próximos 13 dias em `America/Sao_Paulo`, de segunda a sexta, às 9, 10, 11, 14 e 15 horas; exclui instantes passados e já reservados. É um calendário escolar, sem tratamento de feriados e sem integração com serviços públicos. Não há cancelamento, remarcação ou notificação automática nesta entrega.
+
+Entradas extras (inclusive CPF), query parameters, datas fora da grade ou representação ISO diferente da ofertada geram 400. Falta de autorização ou cartão revogado gera 401; persistência indisponível gera 500, sem invalidar silenciosamente uma sessão válida. Atendimento administrativo inexistente gera 404. Disputa pelo mesmo horário gera 409: o índice UNIQUE no SQL decide a reserva atomicamente, mesmo se duas pessoas receberam a mesma oferta. O protocolo não substitui autenticação e não possui consulta pública.
+
+O estado avança de `agendado` → `confirmado` → `concluido`; repetir o estado atual é idempotente. Pular uma etapa ou regredir gera 409. A listagem segue o horário crescente e ainda não tem paginação. Se a resposta do POST se perder, consulte **meus atendimentos** antes de reservar outro horário: cancelar a espera no cliente não desfaz uma gravação no servidor.
+
+Fontes: [rotas](../backend/src/routes/atendimentos.routes.ts), [schemas](../backend/src/schemas/atendimento.ts), [calendário e transições](../backend/src/services/atendimento.service.ts), [persistência SQL](../backend/src/repositories/mysql-atendimentos.repository.ts).
 
 ## Saúde e documentação
 

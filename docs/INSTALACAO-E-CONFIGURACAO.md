@@ -1,5 +1,7 @@
 # Instalação e configuração
 
+**Atualização dos atendimentos simulados:** em uma instalação existente, pare a API e execute `npm run db:setup` e `npm run db:check` antes de reiniciá-la. O preparo acrescenta `facilid_atendimentos` com `CREATE TABLE IF NOT EXISTS`, preservando os registros anteriores. Não repita a importação JSON por causa dessa atualização. Faça backup conforme o guia de operação antes de mudar a estrutura de uma base com dados importantes.
+
 [Índice](README.md) · [Operação e problemas comuns](OPERACAO-E-MANUTENCAO.md)
 
 ## Ambiente e pré-requisitos
@@ -105,7 +107,7 @@ Fonte: [config.ts](../backend/src/config.ts), [mysql.ts](../backend/src/db/mysql
 | `DEMO_PIN` | Ausente | Opcional, seis números; seed artificial. Retirar após preparo. |
 | `EXPO_PUBLIC_API_URL` | Android emulador: 10.0.2.2:3000; web: localhost:3000 | Variável **pública** do frontend; nunca receber segredo. |
 
-`backend/.env` não configura automaticamente o frontend. Passe sua variável pública no terminal do Expo ou use **Ajustar conexão** na interface. O ajuste de URL da tela fica em memória e descarta operações/cartão preparado da conexão anterior.
+`backend/.env` não configura automaticamente o frontend. Passe sua variável pública no terminal do Expo ou use **Ajustar conexão** na **Área do responsável**. O endereço fica em memória. Editar ou salvar o rascunho preserva o formulário/cartão; somente **Confirmar mudança de conexão** aplica o novo serviço e descarta o preparo da conexão anterior, conforme o aviso na tela.
 
 ## Portas alternativas e rede local
 

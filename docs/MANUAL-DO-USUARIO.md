@@ -10,7 +10,7 @@ Público: cidadão, pessoa de apoio, professor e responsável pela emissão.
 
 O responsável emite um cartão digital. O cidadão informa o CPF, apresenta esse cartão e confirma o acesso com um PIN de seis números ou com uma credencial protegida pela biometria do aparelho. Depois, pode visualizar seu cartão digital e consultar se o acesso continua ativo.
 
-A demonstração funciona no navegador, sem cartão físico e sem câmera. Ela precisa da API em execução e conectada ao armazenamento configurado: **modo sem hardware não significa modo offline**. Não há agendamentos ou serviços municipais nesta versão.
+A demonstração funciona no navegador, sem cartão físico e sem câmera. Ela precisa da API em execução e conectada ao armazenamento configurado: **modo sem hardware não significa modo offline**. Os atendimentos da secretaria são uma simulação escolar, sem reserva em serviço público real.
 
 | Recurso | O que significa nesta versão |
 | --- | --- |
@@ -33,7 +33,7 @@ O professor ou responsável técnico deve preparar o serviço conforme [Instala�
 
 A credencial do responsável é diferente do PIN do cidadão. Ela é fornecida pelo operador do ambiente, a partir da configuração privada do servidor. Não deve aparecer em slides, capturas de tela, documentos compartilhados ou no código do projeto.
 
-O botão **Ajustar conexão** abre o campo **Endereço do serviço**. Somente o responsável técnico deve alterá-lo. Trocar o endereço reinicia a tela atual e descarta o cartão preparado em memória; não apaga os registros do banco.
+Na **Área do responsável**, o botão **Ajustar conexão** abre o campo **Endereço do serviço**. Digitar o endereço e tocar em **Salvar conexão** não muda o serviço ainda. Confira o aviso e escolha **Confirmar mudança de conexão** para aplicar: isso reinicia o formulário e descarta o cartão preparado em memória, sem apagar os registros do banco. **Cancelar mudança de conexão** ou **Fechar ajustes** preserva o formulário e o cartão. Os ajustes não aparecem na entrada do cidadão.
 
 ## 3. Entrar como cidadão: três passos
 
@@ -82,6 +82,15 @@ A sessão dura quinze minutos. A tela avisa quando faltar menos de um minuto e r
 
 Fechar ou recarregar o aplicativo perde a sessão mantida em memória. Para voltar, apresente um cartão ativo e confirme novamente. A opção **Sair** não exclui o cadastro nem necessariamente remove a credencial biométrica protegida do dispositivo.
 
+### Agendar atendimento na secretaria
+
+1. Toque em **Agendar atendimento na secretaria** para consultar seus agendamentos e a grade disponível.
+2. Escolha um horário e confira a data em horário de Brasília. O calendário simulado oferece dias úteis entre hoje e os próximos 13 dias, sem considerar feriados.
+3. Toque em **Confirmar agendamento** e guarde o protocolo apresentado. **Cancelar escolha do horário** não faz reserva.
+4. Use **Atualizar meus agendamentos e horários** para consultar a situação: **Agendado**, **Confirmado** ou **Concluído**. Sair e entrar novamente preserva os agendamentos no servidor.
+
+Se outra pessoa reservar o horário primeiro, a tela informa o conflito. Se a conexão cair ao confirmar, consulte seus agendamentos antes de reservar outro horário: fechar a seção ou cancelar a espera não desfaz um pedido já recebido pelo servidor. Não há cancelamento de reserva ou remarcação nesta etapa.
+
 ## 5. Área do responsável
 
 ### 5.1 Acessar e encerrar
@@ -96,7 +105,7 @@ Use **Encerrar acesso do responsável** ao terminar. A operação limpa a creden
 2. Preencha **Nome**, **CPF** e **Idade** com dados fictícios.
 3. Desenhe no quadro e toque em **Confirmar assinatura**, ou use **Usar assinatura fictícia**.
 4. Defina **PIN de acesso (6 números)** e repita em **Confirme o PIN**.
-5. Toque em **Gerar cartão** e aguarde a confirmação.
+5. Toque em **Gerar cartão**, confira a pessoa e o aviso sobre substituição e escolha **Confirmar**. **Cancelar** não envia dados nem altera o servidor.
 6. Use **Usar este cartão na demonstração** para retornar ao login com o cartão preparado.
 
 O modo utiliza uma imagem fictícia identificada como demonstração. Ele mantém as verificações de assinatura digital, estado do cartão e PIN. Não há PIN padrão para todo cidadão; guarde o escolhido na emissão e evite mostrá-lo na apresentação.
@@ -109,7 +118,7 @@ O modo utiliza uma imagem fictícia identificada como demonstração. Ele manté
 4. Toque em **Capturar foto do rosto**. Autorize a câmera, enquadre apenas o participante e escolha **Tirar foto**.
 5. Confira a prévia: **Refazer foto** repete a captura; **Confirmar foto** a seleciona para a emissão.
 6. Desenhe a assinatura e escolha **Confirmar assinatura**. Um toque isolado ou quadro vazio não é aceito. **Limpar assinatura** permite refazer.
-7. Preencha e confirme o PIN; toque em **Gerar cartão**.
+7. Preencha e confirme o PIN; toque em **Gerar cartão**, confira a pessoa e a consequência e escolha **Confirmar**. A foto só é enviada depois dessa confirmação; **Cancelar** não envia foto nem gera cartão.
 
 A foto é enviada ao servidor ao gerar o cartão, após sua confirmação. **Refazer foto do cadastro** apaga o desenho e sua confirmação; desenhe e confirme a assinatura novamente após a nova foto. **Cancelar coleta autorizada** limpa as capturas do formulário. Trocar para o modo demonstração também limpa foto, assinatura, PIN e consentimento da emissão em preparo.
 
@@ -128,12 +137,16 @@ Em **Cartões emitidos**, use **Atualizar lista**. Cada item mostra nome, CPF pa
 | Ação | Procedimento e resultado |
 | --- | --- |
 | Preparar um cartão existente | No item ativo, **Preparar demonstração de [nome]**; depois use o botão de demonstração acima. Não troca o PIN nem cria outra emissão. |
-| Bloquear por perda ou uso indevido | No item ativo, **Bloquear cartão de [nome]**. O cartão deixa de permitir novos acessos e suas sessões são recusadas na próxima consulta protegida. Não há botão de desbloqueio. |
-| Emitir segunda via | Preencha novamente o formulário usando **o mesmo CPF**, capture/confirme os dados do modo escolhido e defina novo PIN. **Gerar cartão** cria outra emissão e marca as anteriores como substituídas. Não existe botão separado chamado “Segunda via”. |
+| Bloquear por perda ou uso indevido | No item ativo, **Bloquear cartão de [nome]** abre a revisão da pessoa e da consequência. **Confirmar** bloqueia; **Cancelar** não altera nada. Depois do bloqueio, novos acessos e consultas protegidas são recusados. Não há botão de desbloqueio. |
+| Emitir segunda via | Preencha novamente o formulário usando **o mesmo CPF**, capture/confirme os dados do modo escolhido e defina novo PIN. **Gerar cartão** abre a revisão; somente **Confirmar** cria outra emissão e substitui as anteriores. Não existe botão separado chamado “Segunda via”. |
 | Recuperar PIN esquecido | Solicite nova emissão ao responsável. O sistema não revela o PIN antigo nem oferece recuperação por e-mail. |
 | Usar cadastro antigo | Registros legados preservados na migração não aparecem como cartões ativos utilizáveis. Emita uma nova via com assinatura confirmada e PIN. |
 
-Antes de bloquear, confira o item selecionado: a tela executa a ação diretamente. Uma segunda via não reativa a tag antiga; entregue e utilize o novo cartão. A biometria habilitada para a emissão anterior também não substitui o PIN do novo cartão.
+Antes de confirmar bloqueio ou emissão, confira a pessoa e a consequência. Uma segunda via não reativa a tag antiga; entregue e utilize o novo cartão. A biometria habilitada para a emissão anterior também não substitui o PIN do novo cartão.
+
+### 5.6 Acompanhar atendimentos simulados
+
+Use **Consultar atendimentos da secretaria** e **Atualizar atendimentos**. Confira pessoa, CPF parcialmente oculto, data e protocolo. A ação **Confirmar atendimento de…** muda um pedido de agendado para confirmado; depois, **Concluir atendimento de…** o encerra. O cidadão vê a mudança ao atualizar sua lista ou entrar novamente. Não há identificação individual do operador nesta versão.
 
 ## 6. Ajuda e recuperação de erros
 

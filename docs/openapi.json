@@ -492,6 +492,68 @@
           }
         }
       },
+      "Atendimento": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "protocolo",
+          "cpf",
+          "nome",
+          "horario",
+          "status",
+          "criadoEm",
+          "atualizadoEm"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "protocolo": {
+            "type": "string",
+            "pattern": "^FID-[A-F0-9]{12}$"
+          },
+          "cpf": {
+            "type": "string",
+            "pattern": "^[0-9]{11}$",
+            "example": "12345678900"
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Maria Silva"
+          },
+          "horario": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "description": "ISO UTC canônico, com milissegundos e Z."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "agendado",
+              "confirmado",
+              "concluido"
+            ]
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "description": "ISO UTC canônico, com milissegundos e Z."
+          },
+          "atualizadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "description": "ISO UTC canônico, com milissegundos e Z."
+          }
+        },
+        "description": "Atendimento simulado na secretaria. CPF e nome vêm exclusivamente da sessão; o histórico permanece vinculado ao CPF após reemissão do cartão."
+      },
       "Sessao": {
         "type": "object",
         "required": [
@@ -525,6 +587,620 @@
     }
   },
   "paths": {
+    "/api/atendimentos/horarios": {
+      "get": {
+        "summary": "Consultar horários disponíveis da secretaria simulada",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Hoje até hoje+13 em America/Sao_Paulo, segunda a sexta às 9h, 10h, 11h, 14h e 15h. Sem calendário de feriados. Retorna somente instantes futuros ainda livres. A reserva pode disputar um horário já apresentado; nesse caso POST retorna 409. Não aceita parâmetros de consulta.",
+        "responses": {
+          "200": {
+            "description": "Horários em ISO UTC",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "horarios"
+                  ],
+                  "properties": {
+                    "horarios": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                        "description": "ISO UTC canônico, com milissegundos e Z."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Consulta inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão expirada, cartão bloqueado ou substituído",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/atendimentos": {
+      "post": {
+        "summary": "Agendar atendimento simulado para o cidadão da sessão",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Reserva exclusiva e persistente por horário. Corpo estrito: CPF/nome enviados pelo cliente são recusados. Repetir uma reserva existente retorna 409; consulte meus atendimentos quando a resposta anterior tiver sido perdida.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "horario"
+                ],
+                "properties": {
+                  "horario": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+                    "description": "ISO UTC canônico, com milissegundos e Z."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Atendimento agendado com protocolo",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Atendimento"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo inválido, horário passado ou fora da grade",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão expirada, cartão bloqueado ou substituído",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Horário ou protocolo já reservado; atualize a lista e escolha novamente",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite do endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Responsável consulta todos os atendimentos simulados",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "description": "Ordenados por horário; não aceita parâmetros de consulta.",
+        "responses": {
+          "200": {
+            "description": "Atendimentos",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Atendimento"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Consulta inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/atendimentos/meus": {
+      "get": {
+        "summary": "Consultar somente os atendimentos do CPF autenticado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "CPF sempre vem do JWT revalidado. Ordenados por horário; não aceita filtros ou parâmetros de consulta.",
+        "responses": {
+          "200": {
+            "description": "Atendimentos do cidadão",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Atendimento"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Consulta inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sessão expirada, cartão bloqueado ou substituído",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/atendimentos/{id}/status": {
+      "patch": {
+        "summary": "Responsável avança o estado de um atendimento",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "description": "Somente agendado → confirmado → concluido. Repetir o estado atual é idempotente e preserva atualizadoEm; não permite saltar uma etapa ou voltar.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "confirmado",
+                      "concluido"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Atendimento atualizado",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Atendimento"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identificador ou corpo inválido",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Atendimento não encontrado",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transição não permitida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Corpo maior que o limite do endpoint",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Verificar disponibilidade da persistência",

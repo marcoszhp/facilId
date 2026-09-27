@@ -68,6 +68,9 @@ As opções ficam no arquivo privado `backend/.env`, com o modelo em [backend/.e
 | `facilid_cartoes` | Identidade assinada, identificador de emissão, ordem e estado ativo/bloqueado/substituído. |
 | `facilid_legados` | Cartões antigos preservados como histórico, sem liberação de acesso. |
 | `facilid_migracoes` | Registro da importação para impedir duplicação. |
+| `facilid_atendimentos` | Atendimento simulado, protocolo, CPF, horário exclusivo e situação. |
+
+Para atualizar uma instalação existente, pare a API e execute `npm run db:setup` e `npm run db:check`; isso acrescenta a tabela sem recriar dados. Não repita a importação JSON. Após entrar, use **Agendar atendimento na secretaria**; o responsável confirma e conclui pela área administrativa. Consulte o [manual](docs/MANUAL-DO-USUARIO.md).
 
 Emissão, segunda via e bloqueio usam transações. Um índice impede dois cartões ativos para o mesmo CPF; emissões simultâneas são coordenadas por pessoa. As consultas usam parâmetros. O esquema legível está em [schema-mysql.sql](backend/src/db/schema-mysql.sql); o comando de preparo já o aplica, sem importação manual pelo phpMyAdmin.
 
@@ -186,6 +189,6 @@ Compilar e passar testes automatizados não comprova leitura/gravação em hardw
 
 ## Pontos preparados para a Etapa 2
 
-O middleware `exigirSessao` pode proteger futuras rotas de agendamento, verificando o estado do cartão a cada chamada. A interface `UsuariosRepository` agora possui implementação MySQL com operações assíncronas e transações, além do JSON opcional. Toda requisição recebe `X-Request-Id`, inclusive erros controlados; o tratador geral também inclui esse identificador no corpo. Não foi instalado um coletor de logs nem implementado agendamento. Um futuro registrador deve aceitar somente identificador e código de erro, sem CPF, conteúdo do cartão, chave administrativa ou JWT.
+O middleware `exigirSessao` protege perfil e agendamentos, verificando o estado do cartão a cada chamada. A interface `UsuariosRepository` agora possui implementação MySQL com operações assíncronas e transações, além do JSON opcional. Toda requisição recebe `X-Request-Id`, inclusive erros controlados; o tratador geral também inclui esse identificador no corpo. Não foi instalado um coletor de logs. O agendamento implementado é uma simulação escolar, sem serviço público real. Um futuro registrador deve aceitar somente identificador e código de erro, sem CPF, conteúdo do cartão, chave administrativa ou JWT.
 
 Evidências atuais em [VALIDACAO-MYSQL.md](VALIDACAO-MYSQL.md). As rodadas anteriores permanecem como histórico em [VALIDACAO-BIOMETRIA.md](VALIDACAO-BIOMETRIA.md) e [VALIDACAO.md](VALIDACAO.md). Referências de compatibilidade: [arquiteturas no Expo](https://docs.expo.dev/guides/new-architecture/), [versões do NFC Manager](https://github.com/revtel/react-native-nfc-manager#version-notes) e [dependências da Testing Library 13.3.3](https://github.com/callstack/react-native-testing-library/blob/v13.3.3/package.json).
