@@ -12,9 +12,12 @@ import { Chip,DadosEmissao,ResumoCartao,normalizarCpf } from '../services/identi
 import { gravarNfc,cancelarNfc } from '../services/nfc.service';
 import { falar,feedback,pararAudio } from '../services/feedback';
 import { styles as s } from '../theme';
+type CampoEmissao='nome'|'cpf'|'idade'|'consentimento'|'foto'|'assinatura'|'pin'|'confirmacaoPin';
+type ErrosEmissao=Partial<Record<CampoEmissao,string>>;
 type AcaoConfirmavel={tipo:'emitir';dados:DadosEmissao;foto:FotoCapturada|null}|{tipo:'bloquear';cartao:ResumoCartao};
 export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=>void}) {
   const {width}=useWindowDimensions();
+  const [etapa,setEtapa]=useState<1|2|3>(1),[errosCampos,setErrosCampos]=useState<ErrosEmissao>({}),[erroEmissao,setErroEmissao]=useState('');
   const [nome,setNome]=useState(''),[cpf,setCpf]=useState(''),[idade,setIdade]=useState('');
   const [credencial,setCredencial]=useState(''),[autorizado,setAutorizado]=useState(false),[cartoes,setCartoes]=useState<ResumoCartao[]>([]),[cartao,setCartao]=useState<Chip|null>(null);
   const [erro,setErro]=useState(''),[busy,setBusy]=useState(false),[gravando,setGravando]=useState(false),[notice,setNotice]=useState('');
@@ -26,17 +29,17 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
   const bloqueado=busy||!!confirmacao;
   const json=cartao?JSON.stringify(cartao):'';
   useEffect(()=>{falar('Área do responsável. Informe a credencial fornecida pelo professor.');return()=>{acaoPendente.current=null;void cancelarNfc();pararAudio();};},[]);
-  async function executar(action:(controle:AbortController)=>Promise<void>){
+  async function executar(action:(controle:AbortController)=>Promise<void>,emissao=false){
     if(ocupado.current)return;
-    ocupado.current=true;const controle=iniciar();setBusy(true);setErro('');setNotice('');
+    ocupado.current=true;const controle=iniciar();setBusy(true);setErro('');setErroEmissao('');setNotice('');
     try{await action(controle);}
     catch(e){if(vigente(controle)&&!erroCancelado(e)){
       if(erroNaoAutorizado(e)){setAutorizado(false);setCredencial('');setCartoes([]);setCartao(null);limparCapturas();}
-      const msg=mensagemErro(e);setErro(msg);feedback(msg,false);
+      const msg=mensagemErro(e);if(emissao&&!erroNaoAutorizado(e))setErroEmissao(msg);else setErro(msg);feedback(msg,false);
     }}finally{if(vigente(controle)){ocupado.current=false;setBusy(false);setGravando(false);}}
   }
   function limparConfirmacao(){acaoPendente.current=null;setConfirmacao(null);}
-  function limparCapturas(){limparConfirmacao();setCapturando(false);setFoto(null);setFotoId(undefined);setAssinatura(null);setEdicao(valor=>valor+1);setPin('');setConfirmacaoPin('');setConsentimento(false);}
+  function limparCapturas(){limparConfirmacao();setEtapa(1);setErrosCampos({});setErroEmissao('');setCapturando(false);setFoto(null);setFotoId(undefined);setAssinatura(null);setEdicao(valor=>valor+1);setPin('');setConfirmacaoPin('');setConsentimento(false);}
   function mudarModo(proximo:'real'|'demonstracao'){limparCapturas();setModo(proximo);setErro('');setNotice('');}
   function encerrar(){cancelar();ocupado.current=false;setBusy(false);setGravando(false);void cancelarNfc();setAutorizado(false);setCredencial('');setCartao(null);setCartoes([]);limparCapturas();setNome('');setCpf('');setIdade('');setErro('');setNotice('Acesso do responsável encerrado.');}
   async function atualizar(controle:AbortController){const lista=await criarApi(url).usuarios(credencial,controle.signal);if(vigente(controle))setCartoes(lista);}
@@ -51,18 +54,35 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
     if(acaoPendente.current)return;
     acaoPendente.current=acao;setConfirmacao(acao);setErro('');setNotice('');falar(descricaoConfirmacao(acao));
   }
+  function limparErro(campo:CampoEmissao){setErrosCampos(anteriores=>({...anteriores,[campo]:undefined}));setErroEmissao('');}
+  function errosDaEtapa(numero:1|2|3):ErrosEmissao{
+    const erros:ErrosEmissao={};
+    if(numero===1){
+      if(nome.trim().length<2||nome.trim().length>100)erros.nome='Nome: informe entre 2 e 100 caracteres.';
+      if(!/^\d{11}$/.test(normalizarCpf(cpf)))erros.cpf='CPF: informe os 11 números.';
+      if(!/^\d{1,3}$/.test(idade)||Number(idade)>130)erros.idade='Idade: informe um número de 0 a 130.';
+      if(modo==='real'&&!consentimento)erros.consentimento='Confirme o consentimento para coletar foto e assinatura, ou use o modo demonstração.';
+    }else if(numero===2){
+      if(modo==='real'&&!foto)erros.foto='Capture e confirme a foto antes de gerar o cartão.';
+      if(!assinatura)erros.assinatura='Desenhe e confirme a assinatura antes de gerar o cartão.';
+    }else{
+      if(!/^\d{6}$/.test(pin))erros.pin='Escolha um PIN com 6 números.';
+      if(pin!==confirmacaoPin||!confirmacaoPin)erros.confirmacaoPin='Os PINs não conferem. Digite os mesmos 6 números nos dois campos.';
+    }
+    return erros;
+  }
+  function validar(numero:1|2|3){
+    const erros=errosDaEtapa(numero);setErrosCampos(erros);
+    if(Object.keys(erros).length){setEtapa(numero);feedback(Object.values(erros)[0]!,false);return false;}
+    return true;
+  }
+  function avancar(numero:1|2){if(bloqueado||!validar(numero))return;setEtapa(numero===1?2:3);setErroEmissao('');}
+  function voltar(numero:1|2){if(bloqueado)return;setCapturando(false);setEtapa(numero);setErroEmissao('');}
   function pedirEmissao(){
     if(ocupado.current||acaoPendente.current)return;
-    setErro('');setNotice('');
-    try{
-      if(!/^\d{1,3}$/.test(idade))throw new Error('Informe a idade em números.');
-      if(!/^\d{6}$/.test(pin))throw new Error('Escolha um PIN com 6 números.');
-      if(pin!==confirmacaoPin)throw new Error('Os PINs não conferem. Digite os mesmos 6 números nos dois campos.');
-      if(modo==='real'&&!consentimento)throw new Error('Confirme o consentimento para coletar foto e assinatura, ou use o modo demonstração.');
-      if(modo==='real'&&!foto)throw new Error('Capture e confirme a foto antes de gerar o cartão.');
-      if(!assinatura)throw new Error('Desenhe e confirme a assinatura antes de gerar o cartão.');
-      pedirConfirmacao({tipo:'emitir',dados:{nome,cpf,idade:Number(idade),modo,assinatura,pin,...(modo==='real'?{fotoId,consentimento:true}:{})},foto});
-    }catch(e){const msg=mensagemErro(e);setErro(msg);feedback(msg,false);}
+    setErro('');setErroEmissao('');setNotice('');
+    if(!validar(1)||!validar(2)||!validar(3)||!assinatura)return;
+    pedirConfirmacao({tipo:'emitir',dados:{nome:nome.trim(),cpf,idade:Number(idade),modo,assinatura,pin,...(modo==='real'?{fotoId,consentimento:true}:{})},foto});
   }
   function confirmarAcao(){
     const acao=acaoPendente.current;
@@ -81,8 +101,14 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
         referencia=enviada.id;setFotoId(referencia);
       }
       const emitido=await api.emitir({...acao.dados,...(acao.dados.modo==='real'?{fotoId:referencia}:{})},credencial,controle.signal);if(!vigente(controle))return;
-      setCartao(emitido);limparCapturas();setNome('');setCpf('');setIdade('');feedback('Cartão gerado. Guarde o PIN escolhido.',true);await atualizar(controle);
-    });
+      setCartao(emitido);limparCapturas();setNome('');setCpf('');setIdade('');feedback('Cartão gerado. Guarde o PIN escolhido.',true);
+      try{await atualizar(controle);}catch(e){
+        if(!vigente(controle)||erroCancelado(e))return;
+        if(erroNaoAutorizado(e))throw e;
+        const msg='Cartão gerado, mas não foi possível atualizar a lista. Use Atualizar lista para tentar novamente. Não é necessário gerar o cartão outra vez.';
+        setErro(msg);feedback(msg,false);
+      }
+    },acao.tipo==='emitir');
   }
   const painelConfirmacao=confirmacao&&<View style={s.card}>
     <Text accessibilityRole="header" style={s.label}>{confirmacao.tipo==='emitir'?'Confirmar emissão ou segunda via':'Confirmar bloqueio'}</Text>
@@ -105,28 +131,53 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
       <AtendimentosAdmin url={url} credencial={credencial} disabled={bloqueado} onUnauthorized={()=>{encerrar();setErro('Acesso do responsável encerrado. Informe uma credencial válida para entrar novamente.');}}/>
       <Text style={s.title}>Emitir cartão</Text>
       <Text style={s.text}>Use CPF fictício nos testes. A coleta real exige uma pessoa voluntária que concorde. Nunca fotografe terceiros sem autorização. Emitir novamente para o mesmo CPF substitui o cartão anterior.</Text>
-      <Text style={s.label}>{modo==='real'?'Modo: coleta autorizada de foto e assinatura':'Modo: demonstração com dados fictícios'}</Text>
-      <Botao title={modo==='real'?'Usar modo demonstração sem câmera':'Usar coleta autorizada de foto e assinatura'} secondary disabled={bloqueado} onPress={()=>mudarModo(modo==='real'?'demonstracao':'real')}/>
+      <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={s.label}>Etapa {etapa} de 3: {etapa===1?'Dados':etapa===2?'Foto e assinatura':'PIN e revisão'}</Text>
       <Botao title="Ouvir instruções" secondary onPress={()=>falar('Preencha nome, CPF e idade. Na coleta autorizada, confirme o consentimento antes de tirar a foto e desenhar a assinatura. Escolha um PIN com seis números e confirme. A demonstração também funciona sem câmera.')}/>
-      <Campo label="Nome" value={nome} onChangeText={setNome} editable={!bloqueado}/><Campo label="CPF" value={cpf} onChangeText={setCpf} keyboardType="number-pad" maxLength={14} editable={!bloqueado}/><Campo label="Idade" value={idade} onChangeText={setIdade} keyboardType="number-pad" maxLength={3} editable={!bloqueado}/>
-      {modo==='real'&&<View style={s.card}>
-        <Text style={s.text}>A foto e o desenho da assinatura serão guardados no servidor deste protótipo, com acesso restrito. Eles não reconhecem o rosto nem comprovam a autoria. A participação é voluntária; você pode usar a demonstração sem coleta real.</Text>
-        {!consentimento?<Botao title="Concordo com a captura para esta demonstração" disabled={bloqueado} onPress={()=>setConsentimento(true)}/>:<>
-          <Text style={s.text} accessibilityLiveRegion="polite">Consentimento confirmado para esta emissão.</Text>
-          <Botao title="Cancelar coleta autorizada" secondary disabled={bloqueado} onPress={limparCapturas}/>
-          {capturando?<CapturaFoto onCancel={()=>setCapturando(false)} onConfirm={capturada=>{setFoto(capturada);setFotoId(undefined);setCapturando(false);}}/>:<>
+      <View style={{gap:16,display:etapa===1?'flex':'none'}} accessibilityElementsHidden={etapa!==1} importantForAccessibility={etapa===1?'auto':'no-hide-descendants'}>
+        <Text style={s.label}>{modo==='real'?'Modo: coleta autorizada de foto e assinatura':'Modo: demonstração com dados fictícios'}</Text>
+        <Botao title={modo==='real'?'Usar modo demonstração sem câmera':'Usar coleta autorizada de foto e assinatura'} secondary disabled={bloqueado} onPress={()=>mudarModo(modo==='real'?'demonstracao':'real')}/>
+        <View style={{gap:8}}><Campo label="Nome" value={nome} onChangeText={valor=>{setNome(valor);limparErro('nome');}} editable={!bloqueado}/><Aviso texto={errosCampos.nome||''}/></View>
+        <View style={{gap:8}}><Campo label="CPF" value={cpf} onChangeText={valor=>{setCpf(valor);limparErro('cpf');}} keyboardType="number-pad" maxLength={14} editable={!bloqueado}/><Aviso texto={errosCampos.cpf||''}/></View>
+        <View style={{gap:8}}><Campo label="Idade" value={idade} onChangeText={valor=>{setIdade(valor);limparErro('idade');}} keyboardType="number-pad" maxLength={3} editable={!bloqueado}/><Aviso texto={errosCampos.idade||''}/></View>
+        {modo==='real'&&<View style={s.card}>
+          <Text style={s.text}>A foto e o desenho da assinatura serão guardados no servidor deste protótipo, com acesso restrito. Eles não reconhecem o rosto nem comprovam a autoria. A participação é voluntária; você pode usar a demonstração sem coleta real.</Text>
+          {!consentimento?<Botao title="Concordo com a captura para esta demonstração" disabled={bloqueado} onPress={()=>{setConsentimento(true);limparErro('consentimento');}}/>:<>
+            <Text style={s.text} accessibilityLiveRegion="polite">Consentimento confirmado para esta emissão.</Text>
+            <Botao title="Cancelar coleta autorizada" secondary disabled={bloqueado} onPress={limparCapturas}/>
+          </>}
+          <Aviso texto={errosCampos.consentimento||''}/>
+        </View>}
+        <Botao title="Continuar para foto e assinatura" disabled={bloqueado} onPress={()=>avancar(1)}/>
+      </View>
+      <View style={{gap:16,display:etapa===2?'flex':'none'}} accessibilityElementsHidden={etapa!==2} importantForAccessibility={etapa===2?'auto':'no-hide-descendants'}>
+        {modo==='real'&&consentimento&&<View style={s.card}>
+          {capturando&&etapa===2?<CapturaFoto onCancel={()=>setCapturando(false)} onConfirm={capturada=>{setFoto(capturada);setFotoId(undefined);setCapturando(false);limparErro('foto');}}/>:<>
             {foto&&<><Image accessibilityLabel="Foto confirmada para esta emissão" source={{uri:`data:${foto.mimeType};base64,${foto.base64}`}} style={{width:'100%',height:180}} resizeMode="contain"/><Text style={s.text}>Foto confirmada. Ela será enviada ao gerar o cartão.</Text></>}
             <Botao title={foto?'Refazer foto do cadastro':'Capturar foto do rosto'} disabled={bloqueado} onPress={()=>{setFoto(null);setFotoId(undefined);setAssinatura(null);setEdicao(valor=>valor+1);setCapturando(true);}}/>
           </>}
-        </>}
-      </View>}
-      {modo==='demonstracao'&&<Text style={s.text}>Sem foto real: o sistema usará uma imagem de exemplo identificada como fictícia. Você pode desenhar ou usar uma assinatura fictícia. Isso não cadastra nem reconhece um rosto.</Text>}
-      {(modo==='demonstracao'||consentimento)&&!capturando&&<AssinaturaManuscrita key={edicao} disabled={bloqueado} demonstracao={modo==='demonstracao'} onConfirm={setAssinatura} onClear={()=>setAssinatura(null)}/>}
-      <Campo label="PIN de acesso (6 números)" value={pin} onChangeText={valor=>setPin(valor.replace(/\D/g,''))} secureTextEntry keyboardType="number-pad" maxLength={6} autoComplete="off" editable={!bloqueado}/>
-      <Campo label="Confirme o PIN" value={confirmacaoPin} onChangeText={valor=>setConfirmacaoPin(valor.replace(/\D/g,''))} secureTextEntry keyboardType="number-pad" maxLength={6} autoComplete="off" editable={!bloqueado}/>
-      <Text style={s.text}>Guarde seu PIN. Ele não aparece no cartão e permite entrar quando a biometria do aparelho não estiver disponível.</Text>
-      <Botao title={busy?'Aguarde…':'Gerar cartão'} disabled={bloqueado} onPress={pedirEmissao}/>
-      {confirmacao?.tipo==='emitir'&&painelConfirmacao}
+          <Aviso texto={errosCampos.foto||''}/>
+        </View>}
+        {modo==='demonstracao'&&<Text style={s.text}>Sem foto real: o sistema usará uma imagem de exemplo identificada como fictícia. Você pode desenhar ou usar uma assinatura fictícia. Isso não cadastra nem reconhece um rosto.</Text>}
+        {(modo==='demonstracao'||consentimento)&&!capturando&&<AssinaturaManuscrita key={edicao} disabled={bloqueado||etapa!==2} demonstracao={modo==='demonstracao'} onConfirm={valor=>{setAssinatura(valor);limparErro('assinatura');}} onClear={()=>setAssinatura(null)}/>}
+        <Aviso texto={errosCampos.assinatura||''}/>
+        <Botao title="Voltar para dados" secondary disabled={bloqueado} onPress={()=>voltar(1)}/>
+        <Botao title="Continuar para PIN e revisão" disabled={bloqueado||capturando} onPress={()=>avancar(2)}/>
+      </View>
+      <View style={{gap:16,display:etapa===3?'flex':'none'}} accessibilityElementsHidden={etapa!==3} importantForAccessibility={etapa===3?'auto':'no-hide-descendants'}>
+        <View style={{gap:8}}><Campo label="PIN de acesso (6 números)" value={pin} onChangeText={valor=>{setPin(valor.replace(/\D/g,''));limparErro('pin');}} secureTextEntry keyboardType="number-pad" maxLength={6} autoComplete="off" editable={!bloqueado}/><Aviso texto={errosCampos.pin||''}/></View>
+        <View style={{gap:8}}><Campo label="Confirme o PIN" value={confirmacaoPin} onChangeText={valor=>{setConfirmacaoPin(valor.replace(/\D/g,''));limparErro('confirmacaoPin');}} secureTextEntry keyboardType="number-pad" maxLength={6} autoComplete="off" editable={!bloqueado}/><Aviso texto={errosCampos.confirmacaoPin||''}/></View>
+        <Text style={s.text}>Guarde seu PIN. Ele não aparece no cartão e permite entrar quando a biometria do aparelho não estiver disponível.</Text>
+        <View style={s.card}>
+          <Text accessibilityRole="header" style={s.label}>Revise antes de gerar o cartão</Text>
+          <Text style={s.text}>Nome: {nome}</Text><Text style={s.text}>CPF: ***.***.***-{normalizarCpf(cpf).slice(-2)}</Text><Text style={s.text}>Idade: {idade} anos</Text>
+          <Text style={s.text}>{modo==='real'?'Coleta autorizada: foto e assinatura confirmadas.':'Demonstração: foto de exemplo e assinatura confirmada.'}</Text>
+          <Text style={s.text}>O PIN permanece oculto. Confira os dados e confirme a emissão na próxima mensagem.</Text>
+        </View>
+        <Botao title="Voltar para foto e assinatura" secondary disabled={bloqueado} onPress={()=>voltar(2)}/>
+        <Botao title={busy?'Aguarde…':'Gerar cartão'} disabled={bloqueado} onPress={pedirEmissao}/>
+        <Aviso texto={erroEmissao}/>
+        {confirmacao?.tipo==='emitir'&&painelConfirmacao}
+      </View>
       {cartao&&<View style={s.card}>
         <Text style={s.label}>Seu cartão de demonstração</Text>
         <Botao title="Usar este cartão na demonstração" disabled={bloqueado} onPress={()=>onUseCard(cartao)}/>

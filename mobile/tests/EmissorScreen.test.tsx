@@ -44,23 +44,32 @@ test('401 em atendimentos limpa acesso administrativo, confirmação e dados sen
   await screen.findByText('Acesso do responsável encerrado. Informe uma credencial válida para entrar novamente.');
   expect(screen.getByLabelText('Credencial do responsável').props.value).toBe('');
   expect(screen.queryByLabelText('Foto confirmada para esta emissão')).toBeNull();
-  await autorizar();expect(screen.getByLabelText('PIN de acesso (6 números)').props.value).toBe('');
+  await autorizar();expect(screen.getByLabelText('PIN de acesso (6 números)',{includeHiddenElements:true}).props.value).toBe('');
   expect(screen.queryByRole('button',{name:'Confirmar'})).toBeNull();
 });
 async function autorizar(){
   fireEvent.changeText(screen.getByLabelText('Credencial do responsável'),'token-do-teste');
   fireEvent.press(screen.getByRole('button',{name:'Acessar área do responsável'}));
-  await screen.findByRole('button',{name:'Gerar cartão'});
+  await screen.findByRole('button',{name:'Continuar para foto e assinatura'});
 }
 function preencher(){
   fireEvent.changeText(screen.getByLabelText('Nome'),cartao.nome);fireEvent.changeText(screen.getByLabelText('CPF'),cartao.cpf);fireEvent.changeText(screen.getByLabelText('Idade'),String(cartao.idade));
+}
+function preencherPin(){
   fireEvent.changeText(screen.getByLabelText('PIN de acesso (6 números)'),'123789');fireEvent.changeText(screen.getByLabelText('Confirme o PIN'),'123789');
+}
+function prepararDemonstracao(){
+  fireEvent.press(screen.getByRole('button',{name:'Continuar para foto e assinatura'}));
+  fireEvent.press(screen.getByRole('button',{name:'Usar assinatura fictícia'}));
+  fireEvent.press(screen.getByRole('button',{name:'Continuar para PIN e revisão'}));preencherPin();
 }
 function prepararColeta(){
   fireEvent.press(screen.getByRole('button',{name:'Concordo com a captura para esta demonstração'}));
+  fireEvent.press(screen.getByRole('button',{name:'Continuar para foto e assinatura'}));
   fireEvent.press(screen.getByRole('button',{name:'Capturar foto do rosto'}));
   fireEvent.press(screen.getByRole('button',{name:'Confirmar foto de teste'}));
   fireEvent.press(screen.getByRole('button',{name:'Confirmar desenho de teste'}));
+  fireEvent.press(screen.getByRole('button',{name:'Continuar para PIN e revisão'}));preencherPin();
 }
 async function confirmarEmissao(){
   const confirmar=await screen.findByRole('button',{name:'Confirmar'});
@@ -70,7 +79,7 @@ async function confirmarEmissao(){
 test('coleta real depende de consentimento e PINs iguais antes de qualquer envio',async()=>{
   render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();preencher();
   expect(screen.queryByRole('button',{name:'Capturar foto do rosto'})).toBeNull();expect(screen.queryByRole('button',{name:'Confirmar desenho de teste'})).toBeNull();
-  fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));await screen.findByText(/confirme o consentimento/i);
+  fireEvent.press(screen.getByRole('button',{name:'Continuar para foto e assinatura'}));await screen.findByText(/confirme o consentimento/i);
   expect(api.foto).not.toHaveBeenCalled();expect(api.emitir).not.toHaveBeenCalled();
   prepararColeta();fireEvent.changeText(screen.getByLabelText('Confirme o PIN'),'987321');
   fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));await screen.findByText(/PINs não conferem/i);
@@ -82,13 +91,13 @@ test('emissão real envia foto protegida antes do cartão e limpa PIN e capturas
   expect(api.foto).toHaveBeenCalledWith('aW1hZ2Vt','image/jpeg','token-do-teste',expect.anything());
   expect(api.emitir).toHaveBeenCalledWith(expect.objectContaining({modo:'real',fotoId:'foto-protegida-de-teste',consentimento:true,assinatura:assinaturaDemonstracao(),pin:'123789'}),'token-do-teste',expect.anything());
   expect(api.emitir.mock.calls[0][0]).not.toHaveProperty('base64');
-  expect(screen.getByLabelText('PIN de acesso (6 números)').props.value).toBe('');expect(screen.getByLabelText('Confirme o PIN').props.value).toBe('');
+  expect(screen.getByLabelText('PIN de acesso (6 números)',{includeHiddenElements:true}).props.value).toBe('');expect(screen.getByLabelText('Confirme o PIN',{includeHiddenElements:true}).props.value).toBe('');
   expect(screen.queryByLabelText('Foto confirmada para esta emissão')).toBeNull();
 });
 test('demonstração continua emitindo sem câmera com assinatura marcada como fictícia e PIN',async()=>{
   render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();
   fireEvent.press(screen.getByRole('button',{name:'Usar modo demonstração sem câmera'}));preencher();
-  fireEvent.press(screen.getByRole('button',{name:'Usar assinatura fictícia'}));fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));
+  prepararDemonstracao();fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));
   await confirmarEmissao();
   await screen.findByRole('button',{name:'Usar este cartão na demonstração'});
   expect(api.foto).not.toHaveBeenCalled();expect(api.emitir.mock.calls[0][0]).toEqual(expect.objectContaining({modo:'demonstracao',assinatura:assinaturaDemonstracao(),pin:'123789'}));
@@ -103,11 +112,12 @@ test('sair durante upload cancela a chamada e não emite depois de resposta tard
 });
 test('refazer foto invalida assinatura anterior e exige confirmar o desenho novamente',async()=>{
   render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();preencher();prepararColeta();
+  fireEvent.press(screen.getByRole('button',{name:'Voltar para foto e assinatura'}));
   fireEvent.press(screen.getByRole('button',{name:'Refazer foto do cadastro'}));
   fireEvent.press(screen.getByRole('button',{name:'Confirmar foto de teste'}));
-  fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));await screen.findByText(/desenhe e confirme a assinatura/i);
+  fireEvent.press(screen.getByRole('button',{name:'Continuar para PIN e revisão'}));await screen.findByText(/desenhe e confirme a assinatura/i);
   expect(api.foto).not.toHaveBeenCalled();expect(api.emitir).not.toHaveBeenCalled();
-  fireEvent.press(screen.getByRole('button',{name:'Confirmar desenho de teste'}));fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));
+  fireEvent.press(screen.getByRole('button',{name:'Confirmar desenho de teste'}));fireEvent.press(screen.getByRole('button',{name:'Continuar para PIN e revisão'}));fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));
   await confirmarEmissao();
   await screen.findByRole('button',{name:'Usar este cartão na demonstração'});expect(api.emitir).toHaveBeenCalledTimes(1);
 });
@@ -116,7 +126,7 @@ test.each(['real','demonstracao'] as const)('cancelar emissão %s não envia fot
   render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();
   if(modo==='demonstracao')fireEvent.press(screen.getByRole('button',{name:'Usar modo demonstração sem câmera'}));
   preencher();
-  if(modo==='real')prepararColeta();else fireEvent.press(screen.getByRole('button',{name:'Usar assinatura fictícia'}));
+  if(modo==='real')prepararColeta();else prepararDemonstracao();
   fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));
   const mensagem=await screen.findByRole('alert');
   expect(mensagem.props.children).toContain(cartao.nome);
@@ -124,14 +134,14 @@ test.each(['real','demonstracao'] as const)('cancelar emissão %s não envia fot
   expect(mensagem.props.children).toContain('Qualquer cartão anterior deste CPF será substituído');
   expect(mensagem.props.children).not.toContain('123789');
   expect(screen.queryByText('123789')).toBeNull();
-  expect(screen.getByLabelText('Nome').props.editable).toBe(false);
+  expect(screen.getByLabelText('Nome',{includeHiddenElements:true}).props.editable).toBe(false);
   expect(api.foto).not.toHaveBeenCalled();expect(api.emitir).not.toHaveBeenCalled();expect(api.bloquear).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button',{name:'Cancelar'}));
   await screen.findByRole('button',{name:'Gerar cartão'});
   expect(screen.queryByRole('button',{name:'Confirmar'})).toBeNull();
-  expect(screen.getByLabelText('Nome').props.value).toBe(cartao.nome);
-  expect(screen.getByLabelText('PIN de acesso (6 números)').props.value).toBe('123789');
-  if(modo==='real')expect(screen.getByLabelText('Foto confirmada para esta emissão')).toBeTruthy();
+  expect(screen.getByLabelText('Nome',{includeHiddenElements:true}).props.value).toBe(cartao.nome);
+  expect(screen.getByLabelText('PIN de acesso (6 números)',{includeHiddenElements:true}).props.value).toBe('123789');
+  if(modo==='real')expect(screen.getByLabelText('Foto confirmada para esta emissão',{includeHiddenElements:true})).toBeTruthy();
   expect(api.foto).not.toHaveBeenCalled();expect(api.emitir).not.toHaveBeenCalled();expect(api.bloquear).not.toHaveBeenCalled();
 });
 

@@ -101,10 +101,12 @@ Use **Encerrar acesso do responsável** ao terminar. A operação limpa a creden
 
 ### 5.2 Emitir uma demonstração sem câmera
 
+A emissão tem três etapas: **Dados**, **Foto e assinatura** e **PIN e revisão**. Use os botões **Continuar** e **Voltar** de cada etapa. Voltar conserva dados, consentimento, foto, desenho (inclusive ainda não confirmado) e PIN. Os campos inválidos mostram orientação próxima e impedem avançar até a correção. Durante uma captura, voltar fecha a câmera. Trocar o modo ou cancelar a coleta continua limpando as capturas, como indicado abaixo.
+
 1. Escolha **Usar modo demonstração sem câmera**.
 2. Preencha **Nome**, **CPF** e **Idade** com dados fictícios.
-3. Desenhe no quadro e toque em **Confirmar assinatura**, ou use **Usar assinatura fictícia**.
-4. Defina **PIN de acesso (6 números)** e repita em **Confirme o PIN**.
+3. Toque em **Continuar para foto e assinatura**. Desenhe no quadro e toque em **Confirmar assinatura**, ou use **Usar assinatura fictícia**.
+4. Use **Continuar para PIN e revisão**. Defina **PIN de acesso (6 números)** e repita em **Confirme o PIN**; confira o resumo, que mantém o PIN oculto.
 5. Toque em **Gerar cartão**, confira a pessoa e o aviso sobre substituição e escolha **Confirmar**. **Cancelar** não envia dados nem altera o servidor.
 6. Use **Usar este cartão na demonstração** para retornar ao login com o cartão preparado.
 
@@ -115,10 +117,10 @@ O modo utiliza uma imagem fictícia identificada como demonstração. Ele manté
 1. Mantenha o modo **coleta autorizada de foto e assinatura** e preencha os dados.
 2. Leia a explicação sobre armazenamento e limites da coleta com o participante.
 3. Somente após a concordância, use **Concordo com a captura para esta demonstração**.
-4. Toque em **Capturar foto do rosto**. Autorize a câmera, enquadre apenas o participante e escolha **Tirar foto**.
+4. Use **Continuar para foto e assinatura** e toque em **Capturar foto do rosto**. Autorize a câmera, enquadre apenas o participante e escolha **Tirar foto**.
 5. Confira a prévia: **Refazer foto** repete a captura; **Confirmar foto** a seleciona para a emissão.
 6. Desenhe a assinatura e escolha **Confirmar assinatura**. Um toque isolado ou quadro vazio não é aceito. **Limpar assinatura** permite refazer.
-7. Preencha e confirme o PIN; toque em **Gerar cartão**, confira a pessoa e a consequência e escolha **Confirmar**. A foto só é enviada depois dessa confirmação; **Cancelar** não envia foto nem gera cartão.
+7. Use **Continuar para PIN e revisão**, preencha e confirme o PIN; toque em **Gerar cartão**, confira a pessoa e a consequência e escolha **Confirmar**. A foto só é enviada depois dessa confirmação; **Cancelar** não envia foto nem gera cartão.
 
 A foto é enviada ao servidor ao gerar o cartão, após sua confirmação. **Refazer foto do cadastro** apaga o desenho e sua confirmação; desenhe e confirme a assinatura novamente após a nova foto. **Cancelar coleta autorizada** limpa as capturas do formulário. Trocar para o modo demonstração também limpa foto, assinatura, PIN e consentimento da emissão em preparo.
 

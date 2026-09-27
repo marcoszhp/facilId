@@ -56,6 +56,8 @@ O padrão do **servidor** é MySQL. O modo JSON é uma alternativa explícita, s
 | Coletas: [coletas.repository.ts](../backend/src/repositories/coletas.repository.ts) | `ArquivosColetasRepository`: foto temporária, coleta, metadados, fatores e limites. | Arquivos AES-256-GCM; usado na emissão, confirmação e sessão. |
 | Autenticação: [desafio.service.ts](../backend/src/services/desafio.service.ts), [auth.service.ts](../backend/src/services/auth.service.ts), [sessao.ts](../backend/src/middleware/sessao.ts) | Reserva de desafio; emissão/validação JWT; `exigirSessao()`. | Consulta cartão ativo e coleta; protege `/api/perfil` e as rotas cidadãs de atendimentos. |
 
+A emissão em `EmissorScreen` guarda os dados no componente pai e mantém as etapas montadas, ocultando as inativas visualmente e da acessibilidade. Isso preserva o rascunho interno de `AssinaturaManuscrita` ao voltar. `errosDaEtapa/validar` bloqueiam avanço e mostram erros próximos aos campos; o envio revalida todas as etapas. A confirmação anterior a upload/emissão continua obrigatória. Não substituir a ocultação por desmontagem sem preservar explicitamente o rascunho.
+
 ## 4. Fluxo de emissão e segunda via
 
 ```mermaid

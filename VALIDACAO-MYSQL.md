@@ -2,7 +2,7 @@
 
 ## Evolução em andamento — propósito pós-login e usabilidade (2026-09-26)
 
-Os resultados abaixo são posteriores à integração descrita no restante deste documento. O pedido tem sete itens; os três primeiros estão concluídos neste marco; a emissão em etapas ainda está em validação. Cada ciclo executou tipos, testes backend/mobile/SQL e builds backend/web, com dados de teste isolados.
+Os resultados abaixo são posteriores à integração descrita no restante deste documento. O pedido tem sete itens; os quatro primeiros estão concluídos neste marco. Cada ciclo executou tipos, testes backend/mobile/SQL e builds backend/web, com dados de teste isolados.
 
 | Marco | Resultado | Evidência local |
 | --- | --- | --- |
@@ -10,8 +10,9 @@ Os resultados abaixo são posteriores à integração descrita no restante deste
 | Item 1: confirmação de emissão/segunda via e bloqueio antes de qualquer upload/escrita | 210 testes: 115+85+10; sete novos casos de cancelamento, confirmação única e saída | `reports/poslogin-item1.json` / `.log` |
 | Item 2: ajustes só na área do responsável, rascunho e confirmação explícita da mudança | 218 testes: 115+93+10; oito novos casos em `mobile/tests/Conexao.test.tsx` | `reports/poslogin-item2.json` / `.log` |
 | Item 3: agendamento simulado, protocolo, isolamento por cidadão e gestão de status | 265 testes: 131 backend +119 mobile +15 SQL; tipos e builds aprovados em 27/09/2026 | `reports/poslogin-item3.json` / `.log` / `.patch` |
+| Item 4: emissão em três etapas, preservação dos dados e erros próximos aos campos | 273 testes: 131 backend +127 mobile +15 SQL; oito novos cenários em `mobile/tests/EmissaoEtapas.test.tsx` | `reports/poslogin-item4.json` / `.log` |
 
-Itens 4–7 (emissão em etapas, filtros, diagnóstico e histórico administrativo) ainda pendentes neste marco. A primeira tentativa SQL encontrou o XAMPP desligado; após iniciá-lo, os 15 testes SQL e o ciclo integrado passaram. A instalação principal ainda precisa do preparo aditivo da tabela de atendimentos. Nenhum teste físico adicional foi realizado. Os avisos existentes sobre foto, assinatura e biometria foram preservados.
+Itens 5–7 (filtros, diagnóstico e histórico administrativo) ainda pendentes neste marco. A primeira tentativa SQL encontrou o XAMPP desligado; após iniciá-lo, os 15 testes SQL e o ciclo integrado passaram. A instalação principal ainda precisa do preparo aditivo da tabela de atendimentos. Nenhum teste físico adicional foi realizado. Os avisos existentes sobre foto, assinatura e biometria foram preservados.
 
 ## Integração original
 

@@ -41,7 +41,7 @@ async function abrirResponsavel() {
   fireEvent.press(screen.getByRole('button', { name: 'Área do responsável' }));
   fireEvent.changeText(screen.getByLabelText('Credencial do responsável'), 'credencial-ficticia-do-teste');
   fireEvent.press(screen.getByRole('button', { name: 'Acessar área do responsável' }));
-  await screen.findByRole('button', { name: 'Gerar cartão' });
+  await screen.findByRole('button', { name: 'Continuar para foto e assinatura' });
 }
 
 test('área do cidadão não emite nem lista cartões e responsável precisa autorizar antes do formulário', async () => {
@@ -68,9 +68,11 @@ test('emissão pode ser usada no mesmo aparelho e 401 remove acesso e volta ao l
   fireEvent.changeText(screen.getByLabelText('Nome'), cartao.nome);
   fireEvent.changeText(screen.getByLabelText('CPF'), cartao.cpf);
   fireEvent.changeText(screen.getByLabelText('Idade'), String(cartao.idade));
+  fireEvent.press(screen.getByRole('button', { name: 'Continuar para foto e assinatura' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Usar assinatura fictícia' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Continuar para PIN e revisão' }));
   fireEvent.changeText(screen.getByLabelText('PIN de acesso (6 números)'), '123456');
   fireEvent.changeText(screen.getByLabelText('Confirme o PIN'), '123456');
-  fireEvent.press(screen.getByRole('button', { name: 'Usar assinatura fictícia' }));
   fireEvent.press(screen.getByRole('button', { name: 'Gerar cartão' }));
   const confirmarEmissao = await screen.findByRole('button', { name: 'Confirmar' });
   await waitFor(() => expect(confirmarEmissao.props.accessibilityState.disabled).toBe(false));
