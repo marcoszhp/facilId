@@ -5,6 +5,7 @@ import { Botao,Campo,Aviso } from '../components/Ui';
 import { useOperacao } from '../components/useOperacao';
 import { AssinaturaManuscrita } from '../components/AssinaturaManuscrita';
 import { CapturaFoto,FotoCapturada } from '../components/CapturaFoto';
+import { AtendimentosAdmin } from '../components/AtendimentosAdmin';
 import { AssinaturaDesenhada } from '../services/desenho-assinatura';
 import { criarApi,erroCancelado,erroNaoAutorizado,mensagemErro } from '../services/api.service';
 import { Chip,DadosEmissao,ResumoCartao,normalizarCpf } from '../services/identidade';
@@ -101,6 +102,7 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
       })}/>
     </>:<>
       <Botao title="Encerrar acesso do responsável" secondary onPress={encerrar}/>
+      <AtendimentosAdmin url={url} credencial={credencial} disabled={bloqueado} onUnauthorized={()=>{encerrar();setErro('Acesso do responsável encerrado. Informe uma credencial válida para entrar novamente.');}}/>
       <Text style={s.title}>Emitir cartão</Text>
       <Text style={s.text}>Use CPF fictício nos testes. A coleta real exige uma pessoa voluntária que concorde. Nunca fotografe terceiros sem autorização. Emitir novamente para o mesmo CPF substitui o cartão anterior.</Text>
       <Text style={s.label}>{modo==='real'?'Modo: coleta autorizada de foto e assinatura':'Modo: demonstração com dados fictícios'}</Text>

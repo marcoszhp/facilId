@@ -80,6 +80,21 @@ export const MYSQL_SCHEMA = [
     legados_importados INT UNSIGNED NOT NULL,
     aplicada_em TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (fonte_hash)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS facilid_atendimentos (
+    id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    protocolo CHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    cpf CHAR(11) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    horario DATETIME(3) NOT NULL,
+    status ENUM('agendado','confirmado','concluido') NOT NULL,
+    criado_em DATETIME(3) NOT NULL,
+    atualizado_em DATETIME(3) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY facilid_atendimento_horario (horario),
+    UNIQUE KEY facilid_atendimento_protocolo (protocolo),
+    KEY facilid_atendimentos_cpf (cpf),
+    CONSTRAINT facilid_atendimentos_pessoa FOREIGN KEY (cpf) REFERENCES facilid_pessoas(cpf)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 ];
 
@@ -93,4 +108,5 @@ export async function validarSchema(pool: Pool): Promise<void> {
   await pool.query('SELECT emissao_id, cpf, nome, idade, versao, rosto_hash, digital_template, assinatura_svg, assinatura_digital_orgao, estado, ordem, cpf_ativo, criado_em FROM facilid_cartoes LIMIT 0');
   await pool.query('SELECT conteudo_hash, cpf, identidade_json FROM facilid_legados LIMIT 0');
   await pool.query('SELECT fonte_hash, cartoes_importados, legados_importados, aplicada_em FROM facilid_migracoes LIMIT 0');
+  await pool.query('SELECT id, protocolo, cpf, nome, horario, status, criado_em, atualizado_em FROM facilid_atendimentos LIMIT 0');
 }

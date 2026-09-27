@@ -17,11 +17,35 @@ jest.mock('../src/components/AssinaturaManuscrita',()=>({AssinaturaManuscrita:({
   const React=require('react'),{Button}=require('react-native'),{assinaturaDemonstracao}=require('../src/services/desenho-assinatura');
   return React.createElement(Button,{title:demonstracao?'Usar assinatura fictícia':'Confirmar desenho de teste',onPress:()=>onConfirm(assinaturaDemonstracao())});
 }}));
-const api={emitir:jest.fn(),usuarios:jest.fn(),foto:jest.fn(),cartao:jest.fn(),bloquear:jest.fn()};
+const api={emitir:jest.fn(),usuarios:jest.fn(),foto:jest.fn(),cartao:jest.fn(),bloquear:jest.fn(),atendimentos:jest.fn()};
 beforeEach(()=>{
   Object.values(api).forEach(mock=>mock.mockReset());
   jest.mocked(criarApi).mockReturnValue(api as unknown as ReturnType<typeof criarApi>);
   api.usuarios.mockResolvedValue([]);api.emitir.mockResolvedValue(cartao);api.foto.mockResolvedValue({id:'foto-protegida-de-teste',hash:'hash-de-teste'});
+  api.atendimentos.mockResolvedValue([]);
+});
+
+test('encerrar responsável cancela consulta de atendimentos e ignora resposta tardia',async()=>{
+  const consulta=pendente<[]>();api.atendimentos.mockReturnValueOnce(consulta.promise);
+  render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();
+  expect(api.atendimentos).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button',{name:'Consultar atendimentos da secretaria'}));
+  const signal=api.atendimentos.mock.calls[0][1] as AbortSignal;
+  fireEvent.press(screen.getByRole('button',{name:'Encerrar acesso do responsável'}));expect(signal.aborted).toBe(true);
+  await act(async()=>consulta.rejeitar(Object.assign(new Error('expired'),{isAxiosError:true,response:{status:401}})));
+  expect(screen.getByLabelText('Credencial do responsável').props.value).toBe('');
+  expect(screen.queryByRole('alert')).toBeNull();
+});
+
+test('401 em atendimentos limpa acesso administrativo, confirmação e dados sensíveis',async()=>{
+  api.atendimentos.mockRejectedValueOnce(Object.assign(new Error('expired'),{isAxiosError:true,response:{status:401}}));
+  render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();preencher();prepararColeta();
+  fireEvent.press(screen.getByRole('button',{name:'Consultar atendimentos da secretaria'}));
+  await screen.findByText('Acesso do responsável encerrado. Informe uma credencial válida para entrar novamente.');
+  expect(screen.getByLabelText('Credencial do responsável').props.value).toBe('');
+  expect(screen.queryByLabelText('Foto confirmada para esta emissão')).toBeNull();
+  await autorizar();expect(screen.getByLabelText('PIN de acesso (6 números)').props.value).toBe('');
+  expect(screen.queryByRole('button',{name:'Confirmar'})).toBeNull();
 });
 async function autorizar(){
   fireEvent.changeText(screen.getByLabelText('Credencial do responsável'),'token-do-teste');

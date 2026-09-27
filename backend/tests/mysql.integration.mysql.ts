@@ -8,6 +8,8 @@ import { createApp } from '../src/app';
 import { criarPoolMySql, MySqlConfig, prepararSchema } from '../src/db/mysql';
 import { migrarJson } from '../src/db/migrar-json';
 import { MysqlUsuariosRepository } from '../src/repositories/mysql-usuarios.repository';
+import { MysqlAtendimentosRepository } from '../src/repositories/mysql-atendimentos.repository';
+import { horariosDaGrade, novoAtendimento } from '../src/services/atendimento.service';
 import { coletaTeste, loginCompleto, PIN_TESTE } from './helpers';
 
 // Suite opt-in: não carrega .env nem utiliza DB_NAME. Cada caso cria seu próprio
@@ -29,13 +31,13 @@ function conferirBancoDeTeste() {
 function abrirApp() {
   const atual = pool!;
   return createApp(dir, secret, admin, {
-    repo: new MysqlUsuariosRepository(atual), verificarPersistencia: async () => {await atual.query('SELECT 1');}
+    repo: new MysqlUsuariosRepository(atual), atendimentosRepo: new MysqlAtendimentosRepository(atual), verificarPersistencia: async () => {await atual.query('SELECT 1');}
   });
 }
 const emitir = (dados: object = {}, target = app) => request(target).post('/api/emissao').set('X-Admin-Token', admin).send({...coletaTeste, ...pessoa, ...dados});
 const perfil = (token: string, target = app) => request(target).get('/api/perfil').set('Authorization', `Bearer ${token}`);
 const bloquear = (id: string, target = app) => request(target).post(`/api/cartoes/${id}/bloquear`).set('X-Admin-Token', admin);
-async function quantidade(tabela: 'facilid_cartoes' | 'facilid_legados' | 'facilid_migracoes' | 'facilid_pessoas') {
+async function quantidade(tabela: 'facilid_cartoes' | 'facilid_legados' | 'facilid_migracoes' | 'facilid_pessoas' | 'facilid_atendimentos') {
   const [rows] = await pool!.query<RowDataPacket[]>(`SELECT COUNT(*) AS total FROM ${tabela}`);
   return Number(rows[0].total);
 }
@@ -216,4 +218,87 @@ test('JSON v1 é preservado como legado sem alterar origem ou backup; JSON invá
   expect(await quantidade('facilid_cartoes')).toBe(0);
   expect(readFileSync(invalido, 'utf8')).toBe('[{}]');
   expect(PIN_TESTE).toHaveLength(6);
+});
+
+test('MySQL real: reservas concorrentes em duas instâncias têm um único vencedor por horário', async () => {
+  const chip = (await emitir().expect(201)).body;
+  const token = (await loginCompleto(app, chip, pessoa.cpf)).body.token;
+  const outroChip = (await emitir({cpf: '98765432100', nome: 'Outra Pessoa Fictícia'}).expect(201)).body;
+  const outroToken = (await loginCompleto(app, outroChip, outroChip.cpf)).body.token;
+  const horario = horariosDaGrade()[0], outroApp = abrirApp();
+  const reservar = (target: typeof app, bearer: string) => request(target).post('/api/atendimentos').set('Authorization', `Bearer ${bearer}`).send({horario});
+  const respostas = await Promise.all([reservar(app, token), reservar(outroApp, outroToken), reservar(app, outroToken)]);
+  expect(respostas.map(item => item.status).sort()).toEqual([201, 409, 409]);
+  expect(await quantidade('facilid_atendimentos')).toBe(1);
+  const vencedor = respostas.find(item => item.status === 201)!.body;
+  expect(vencedor.horario).toBe(horario);
+  expect(vencedor.protocolo).toMatch(/^FID-[A-F0-9]{12}$/);
+  await reservar(app, token).expect(409);
+  expect((await request(app).get('/api/atendimentos/horarios').set('Authorization', `Bearer ${token}`).expect(200)).body.horarios).not.toContain(horario);
+  expect(existsSync(path.join(dir, 'atendimentos.json'))).toBe(false);
+});
+
+test('MySQL real: atendimento isola CPF, status é idempotente e sobrevive à reconexão e segunda via', async () => {
+  const grade = horariosDaGrade();
+  const primeiro = (await emitir().expect(201)).body;
+  const token = (await loginCompleto(app, primeiro, pessoa.cpf)).body.token;
+  const outro = (await emitir({cpf: '98765432100', nome: 'Outra Pessoa'}).expect(201)).body;
+  const outroToken = (await loginCompleto(app, outro, outro.cpf)).body.token;
+  const agendar = (bearer: string, horario: string) => request(app).post('/api/atendimentos').set('Authorization', `Bearer ${bearer}`).send({horario});
+  const atendimento = (await agendar(token, grade[0]).expect(201)).body;
+  const outroAtendimento = (await agendar(outroToken, grade[1]).expect(201)).body;
+  const atualizar = (status: string) => request(app).patch(`/api/atendimentos/${atendimento.id}/status`).set('X-Admin-Token', admin).send({status});
+  await atualizar('concluido').expect(409);
+  const confirmados = await Promise.all([atualizar('confirmado'), atualizar('confirmado')]);
+  expect(confirmados.map(item => item.status)).toEqual([200, 200]);
+  expect(confirmados[0].body).toEqual(confirmados[1].body);
+  const concluido = (await atualizar('concluido').expect(200)).body;
+  expect((await atualizar('concluido').expect(200)).body).toEqual(concluido);
+  await atualizar('confirmado').expect(409);
+  await pool!.end(); pool = criarPoolMySql(config); app = abrirApp();
+  const meus = (bearer: string) => request(app).get('/api/atendimentos/meus').set('Authorization', `Bearer ${bearer}`);
+  expect((await meus(token).expect(200)).body).toEqual([concluido]);
+  expect((await meus(outroToken).expect(200)).body).toEqual([outroAtendimento]);
+  const segundaVia = (await emitir().expect(201)).body;
+  await meus(token).expect(401);
+  const novoToken = (await loginCompleto(app, segundaVia, pessoa.cpf)).body.token;
+  expect((await meus(novoToken).expect(200)).body).toEqual([concluido]);
+  await bloquear(segundaVia.emissaoId).expect(200);
+  await agendar(novoToken, grade[2]).expect(401);
+  expect(await quantidade('facilid_atendimentos')).toBe(2);
+});
+
+test('MySQL real: banco impõe protocolo único e FK da pessoa, com datas UTC preservadas', async () => {
+  await emitir().expect(201);
+  const repo = new MysqlAtendimentosRepository(pool!), grade = horariosDaGrade();
+  const primeiro = novoAtendimento(pessoa, grade[0]);
+  primeiro.criadoEm = primeiro.atualizadoEm = '2026-09-01T01:02:03.456Z';
+  await repo.reservar(primeiro);
+  await expect(repo.reservar({...primeiro, id: randomUUID(), horario: grade[1]})).rejects.toMatchObject({status: 409});
+  await expect(repo.reservar(novoAtendimento({cpf: '00000000000', nome: 'Pessoa sem cartão'}, grade[2]))).rejects.toMatchObject({code: 'ER_NO_REFERENCED_ROW_2'});
+  expect(await repo.listar()).toEqual([primeiro]);
+  expect(await quantidade('facilid_atendimentos')).toBe(1);
+});
+
+test('MySQL real: preparo aditivo preserva cartões e atendimentos já existentes', async () => {
+  const chip = (await emitir().expect(201)).body;
+  const repo = new MysqlAtendimentosRepository(pool!);
+  const atendimento = await repo.reservar(novoAtendimento(pessoa, horariosDaGrade()[0]));
+  await prepararSchema(pool!);
+  expect((await new MysqlUsuariosRepository(pool!).buscarEmissao(chip.emissaoId))?.chip).toEqual(chip);
+  expect(await repo.listar()).toEqual([atendimento]);
+  for (const tabela of ['facilid_pessoas', 'facilid_cartoes', 'facilid_atendimentos'] as const) expect(await quantidade(tabela)).toBe(1);
+  for (const tabela of ['facilid_legados', 'facilid_migracoes'] as const) expect(await quantidade(tabela)).toBe(0);
+});
+
+test('MySQL real: falha ao atualizar status faz rollback e não expõe erro do banco', async () => {
+  await emitir().expect(201);
+  const repo = new MysqlAtendimentosRepository(pool!);
+  const atendimento = await repo.reservar(novoAtendimento(pessoa, horariosDaGrade()[0]));
+  await pool!.query("CREATE TRIGGER falha_status BEFORE UPDATE ON facilid_atendimentos FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Detalhe artificial privado do banco'");
+  const resposta = await request(app).patch(`/api/atendimentos/${atendimento.id}/status`).set('X-Admin-Token', admin).send({status: 'confirmado'}).expect(500);
+  expect(JSON.stringify(resposta.body)).not.toContain('privado');
+  expect(await repo.listar()).toEqual([atendimento]);
+  await pool!.query('DROP TRIGGER falha_status');
+  await request(app).patch(`/api/atendimentos/${atendimento.id}/status`).set('X-Admin-Token', admin).send({status: 'confirmado'}).expect(200);
 });

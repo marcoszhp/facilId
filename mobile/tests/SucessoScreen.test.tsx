@@ -13,9 +13,48 @@ jest.mock('../src/services/feedback', () => ({
 }));
 
 const perfil = jest.fn();
+const horarios=jest.fn(),meusAtendimentos=jest.fn();
 beforeEach(() => {
-  perfil.mockReset();
-  jest.mocked(criarApi).mockReturnValue({ perfil } as unknown as ReturnType<typeof criarApi>);
+  perfil.mockReset();horarios.mockReset();meusAtendimentos.mockReset();
+  horarios.mockResolvedValue({horarios:[]});meusAtendimentos.mockResolvedValue([]);
+  jest.mocked(criarApi).mockReturnValue({ perfil,horarios,meusAtendimentos } as unknown as ReturnType<typeof criarApi>);
+});
+
+test('sair desmonta agenda imediatamente, aborta consultas e ignora 401 tardio',async()=>{
+  const consulta=pendente<[]>();meusAtendimentos.mockReturnValueOnce(consulta.promise);
+  const onExit=jest.fn();render(<SucessoScreen sessao={sessao()} url="http://localhost:3000" onExit={onExit}/>);
+  expect(horarios).not.toHaveBeenCalled();
+  expect(screen.getByText('Demonstração escolar • não é documento oficial')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button',{name:'Agendar atendimento na secretaria'}));
+  const signal=meusAtendimentos.mock.calls[0][1] as AbortSignal;
+  fireEvent.press(screen.getByRole('button',{name:'Sair'}));expect(signal.aborted).toBe(true);
+  expect(screen.queryByText('Meus agendamentos')).toBeNull();
+  await act(async()=>consulta.rejeitar(Object.assign(new Error('expired'),{isAxiosError:true,response:{status:401}})));
+  expect(onExit).toHaveBeenCalledTimes(1);
+});
+
+test('401 na agenda encerra toda sessão e cancela consulta de perfil simultânea',async()=>{
+  const consulta=pendente<ReturnType<typeof sessao>['perfil']>();perfil.mockReturnValueOnce(consulta.promise);
+  horarios.mockRejectedValueOnce(Object.assign(new Error('expired'),{isAxiosError:true,response:{status:401}}));
+  const onExit=jest.fn();render(<SucessoScreen sessao={sessao()} url="http://localhost:3000" onExit={onExit}/>);
+  fireEvent.press(screen.getByRole('button',{name:'Consultar meu acesso'}));
+  const signal=perfil.mock.calls[0][1] as AbortSignal;
+  fireEvent.press(screen.getByRole('button',{name:'Agendar atendimento na secretaria'}));
+  await waitFor(()=>expect(onExit).toHaveBeenCalledTimes(1));expect(signal.aborted).toBe(true);
+  expect(screen.queryByText('Meus agendamentos')).toBeNull();
+  await act(async()=>consulta.rejeitar(Object.assign(new Error('expired'),{isAxiosError:true,response:{status:401}})));
+  expect(onExit).toHaveBeenCalledTimes(1);
+});
+
+test('expiração da sessão cancela agenda aberta sem depender da navegação do App',async()=>{
+  jest.useFakeTimers();
+  const consulta=pendente<[]>();meusAtendimentos.mockReturnValueOnce(consulta.promise);
+  const onExit=jest.fn();render(<SucessoScreen sessao={sessao({expiraEm:Date.now()+10_000})} url="http://localhost:3000" onExit={onExit}/>);
+  fireEvent.press(screen.getByRole('button',{name:'Agendar atendimento na secretaria'}));
+  const signal=meusAtendimentos.mock.calls[0][1] as AbortSignal;
+  act(()=>jest.advanceTimersByTime(10_000));expect(signal.aborted).toBe(true);
+  expect(onExit).toHaveBeenCalledWith(expect.stringMatching(/sessão expirou/i));
+  await act(async()=>consulta.resolver([]));expect(screen.queryByText('Meus agendamentos')).toBeNull();
 });
 afterEach(() => { jest.useRealTimers(); });
 

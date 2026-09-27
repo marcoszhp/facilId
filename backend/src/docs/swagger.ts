@@ -12,6 +12,8 @@ const estado = {type: 'string', enum: ['ativo', 'bloqueado', 'substituido']};
 const admin = [{adminToken: []}];
 const parametroId = [{in: 'path', name: 'emissaoId', required: true, schema: id}];
 const erroAdmin = {'401': response('Chave administrativa ausente ou incorreta', ref('Erro'))};
+const instante = {type: 'string', format: 'date-time', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$', description: 'ISO UTC canônico, com milissegundos e Z.'};
+const erroSessao = {'401': response('Sessão expirada, cartão bloqueado ou substituído', ref('Erro'))};
 const desenho = {type:'object',additionalProperties:false,required:['largura','altura','tracos'],properties:{
   largura:{type:'integer',enum:[320]},altura:{type:'integer',enum:[180]},
   tracos:{type:'array',minItems:1,maxItems:32,description:'Até 1500 pontos no total; pelo menos um segmento com deslocamento após arredondar para 2 casas.',items:{type:'array',minItems:2,maxItems:512,items:{type:'object',additionalProperties:false,required:['x','y'],properties:{x:{type:'number',minimum:0,maximum:320},y:{type:'number',minimum:0,maximum:180}}}}}
@@ -45,6 +47,10 @@ export const swagger = swaggerJsdoc({definition: {
       ResumoCartao: {type: 'object', properties: {...cadastro.properties, emissaoId: id, estado}},
       Erro: {type: 'object', properties: {mensagem: {type: 'string'}, sucesso:{type:'boolean',enum:[false],description:'Presente nas recusas da primeira etapa de autenticação.'}, tentarEm:{type:'integer',format:'int64',description:'Retomada após limite de fatores, em Unix epoch milissegundos.'}, requestId: {type: 'string', format: 'uuid', description: 'Correlação opcional; também disponível no cabeçalho X-Request-Id'}}},
       Perfil: {type: 'object', properties: cadastro.properties},
+      Atendimento: {type: 'object', additionalProperties: false, required: ['id', 'protocolo', 'cpf', 'nome', 'horario', 'status', 'criadoEm', 'atualizadoEm'], properties: {
+        id, protocolo: {type: 'string', pattern: '^FID-[A-F0-9]{12}$'}, cpf: cadastro.properties.cpf, nome: cadastro.properties.nome,
+        horario: instante, status: {type: 'string', enum: ['agendado', 'confirmado', 'concluido']}, criadoEm: instante, atualizadoEm: instante
+      }, description: 'Atendimento simulado na secretaria. CPF e nome vêm exclusivamente da sessão; o histórico permanece vinculado ao CPF após reemissão do cartão.'},
       Sessao: {type: 'object', required: ['sucesso', 'token', 'perfil', 'expiraEm'], properties: {
         sucesso: {type: 'boolean'}, token: {type: 'string'}, perfil: ref('Perfil'),
         expiraEm: {type: 'integer', format: 'int64', description: 'Instante de expiração em milissegundos desde Unix epoch'},
@@ -53,6 +59,17 @@ export const swagger = swaggerJsdoc({definition: {
     }
   },
   paths: {
+    '/api/atendimentos/horarios': {get: {summary: 'Consultar horários disponíveis da secretaria simulada', security: [{bearerAuth: []}], description: 'Hoje até hoje+13 em America/Sao_Paulo, segunda a sexta às 9h, 10h, 11h, 14h e 15h. Sem calendário de feriados. Retorna somente instantes futuros ainda livres. A reserva pode disputar um horário já apresentado; nesse caso POST retorna 409. Não aceita parâmetros de consulta.', responses: {
+      '200': response('Horários em ISO UTC', {type: 'object', required: ['horarios'], properties: {horarios: {type: 'array', items: instante}}}), '400': response('Consulta inválida', ref('Erro')), ...erroSessao
+    }}},
+    '/api/atendimentos': {
+      post: {summary: 'Agendar atendimento simulado para o cidadão da sessão', security: [{bearerAuth: []}], description: 'Reserva exclusiva e persistente por horário. Corpo estrito: CPF/nome enviados pelo cliente são recusados. Repetir uma reserva existente retorna 409; consulte meus atendimentos quando a resposta anterior tiver sido perdida.', requestBody: body({type: 'object', additionalProperties: false, required: ['horario'], properties: {horario: instante}}), responses: {
+        '201': response('Atendimento agendado com protocolo', ref('Atendimento')), '400': response('Corpo inválido, horário passado ou fora da grade', ref('Erro')), '409': response('Horário ou protocolo já reservado; atualize a lista e escolha novamente', ref('Erro')), ...erroSessao
+      }},
+      get: {summary: 'Responsável consulta todos os atendimentos simulados', security: admin, description: 'Ordenados por horário; não aceita parâmetros de consulta.', responses: {'200': response('Atendimentos', {type: 'array', items: ref('Atendimento')}), '400': response('Consulta inválida', ref('Erro')), ...erroAdmin}}
+    },
+    '/api/atendimentos/meus': {get: {summary: 'Consultar somente os atendimentos do CPF autenticado', security: [{bearerAuth: []}], description: 'CPF sempre vem do JWT revalidado. Ordenados por horário; não aceita filtros ou parâmetros de consulta.', responses: {'200': response('Atendimentos do cidadão', {type: 'array', items: ref('Atendimento')}), '400': response('Consulta inválida', ref('Erro')), ...erroSessao}}},
+    '/api/atendimentos/{id}/status': {patch: {summary: 'Responsável avança o estado de um atendimento', security: admin, parameters: [{in: 'path', name: 'id', required: true, schema: id}], description: 'Somente agendado → confirmado → concluido. Repetir o estado atual é idempotente e preserva atualizadoEm; não permite saltar uma etapa ou voltar.', requestBody: body({type: 'object', additionalProperties: false, required: ['status'], properties: {status: {type: 'string', enum: ['confirmado', 'concluido']}}}), responses: {'200': response('Atendimento atualizado', ref('Atendimento')), '400': response('Identificador ou corpo inválido', ref('Erro')), '404': response('Atendimento não encontrado', ref('Erro')), '409': response('Transição não permitida', ref('Erro')), ...erroAdmin}}},
     '/health': {get: {summary:'Verificar disponibilidade da persistência',description:'No servidor MySQL executa SELECT 1. Não autentica cidadão nem certifica câmera, NFC, biometria ou integridade de todas as coletas.',responses:{
       '200':response('Persistência disponível',{type:'object',required:['status'],properties:{status:{type:'string',enum:['ok']}}}),
       '503':response('Persistência indisponível',{type:'object',required:['status','mensagem'],properties:{status:{type:'string',enum:['indisponivel']},mensagem:{type:'string',example:'Banco de dados indisponível.'}}})
@@ -96,7 +113,7 @@ for(const [rota,metodos] of Object.entries(operacoes)){
   if(!rota.startsWith('/api/'))continue;
   for(const [metodo,operacao] of Object.entries(metodos)){
     operacao.responses['500']=response('Falha interna ou de persistência; não indica credencial inválida',ref('Erro'));
-    if(metodo==='post'){
+    if(metodo==='post'||metodo==='patch'){
       operacao.responses['400']??=response('JSON em formato inválido',ref('Erro'));
       operacao.responses['413']??=response('Corpo maior que o limite do endpoint',ref('Erro'));
     }

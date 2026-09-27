@@ -44,3 +44,19 @@ CREATE TABLE IF NOT EXISTS facilid_migracoes (
     aplicada_em TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     PRIMARY KEY (fonte_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS facilid_atendimentos (
+    id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    protocolo CHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    cpf CHAR(11) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    horario DATETIME(3) NOT NULL,
+    status ENUM('agendado','confirmado','concluido') NOT NULL,
+    criado_em DATETIME(3) NOT NULL,
+    atualizado_em DATETIME(3) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY facilid_atendimento_horario (horario),
+    UNIQUE KEY facilid_atendimento_protocolo (protocolo),
+    KEY facilid_atendimentos_cpf (cpf),
+    CONSTRAINT facilid_atendimentos_pessoa FOREIGN KEY (cpf) REFERENCES facilid_pessoas(cpf)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

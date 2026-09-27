@@ -12,8 +12,13 @@ import { randomUUID } from 'node:crypto';
 import { carregarAdminToken } from './services/admin.service';
 import { ArquivosColetasRepository } from './repositories/coletas.repository';
 import { ErroColeta } from './services/coleta.service';
-export function createApp(dataDir:string,secret:string,adminToken=carregarAdminToken(dataDir),options?:{repo?:UsuariosRepository;verificarPersistencia?:()=>Promise<void>}) {
+import { AtendimentosRepository, JsonAtendimentosRepository } from './repositories/atendimentos.repository';
+import { atendimentosRoutes } from './routes/atendimentos.routes';
+import { ErroAtendimento } from './services/atendimento.service';
+export function createApp(dataDir:string,secret:string,adminToken=carregarAdminToken(dataDir),options?:{repo?:UsuariosRepository;atendimentosRepo?:AtendimentosRepository;verificarPersistencia?:()=>Promise<void>}) {
   const app=express(); const repo=options?.repo ?? new JsonUsuariosRepository(path.join(dataDir,'usuarios.json'));
+  const atendimentos=options?.atendimentosRepo ?? new JsonAtendimentosRepository(path.join(dataDir,'atendimentos.json'));
+  const auth=authService(secret);
   const assinatura=assinaturaService(carregarChaves(path.join(dataDir,'keys')));
   const coletas=new ArquivosColetasRepository(path.join(dataDir,'coletas'));
   app.disable('x-powered-by');
@@ -28,11 +33,13 @@ export function createApp(dataDir:string,secret:string,adminToken=carregarAdminT
   });
   app.get('/openapi.json',(_req,res)=>res.json(swagger));
   app.use('/docs',swaggerUi.serve,swaggerUi.setup(swagger));
-  app.use('/api',autenticacaoRoutes(repo,assinatura,authService(secret),coletas));
+  app.use('/api',autenticacaoRoutes(repo,assinatura,auth,coletas));
+  app.use('/api',atendimentosRoutes(atendimentos,repo,auth,coletas,adminToken));
   app.use((_req,res)=>{res.status(404).json({mensagem:'Endereço não encontrado.'});});
   app.use((error:any,_req:express.Request,res:express.Response,_next:express.NextFunction)=>{
-    const status=error instanceof ErroColeta?error.status:error.type==='entity.too.large'?413:error.type==='entity.parse.failed'?400:500;
-    res.status(status).json({mensagem:error instanceof ErroColeta?error.message:status===500?'Não foi possível concluir. Tente novamente.':'Dados enviados em formato inválido ou muito grandes.',requestId:res.locals.requestId});
+    const controlado=error instanceof ErroColeta||error instanceof ErroAtendimento;
+    const status=controlado?error.status:error.type==='entity.too.large'?413:error.type==='entity.parse.failed'?400:500;
+    res.status(status).json({mensagem:controlado?error.message:status===500?'Não foi possível concluir. Tente novamente.':'Dados enviados em formato inválido ou muito grandes.',requestId:res.locals.requestId});
   });
   return app;
 }
