@@ -15,7 +15,7 @@ async function iniciar(){
     mkdirSync(dir,{recursive:true});
     const secretFile=path.join(dir,'jwt.secret');
     if(!process.env.JWT_SECRET&&!existsSync(secretFile))writeFileSync(secretFile,randomBytes(48).toString('hex'),{mode:0o600,flag:'wx'});
-    const app=createApp(dir,process.env.JWT_SECRET||readFileSync(secretFile,'utf8'),carregarAdminToken(dir),{repo:persistencia.repo,atendimentosRepo:persistencia.atendimentosRepo,verificarPersistencia:persistencia.verificar});
+    const app=createApp(dir,process.env.JWT_SECRET||readFileSync(secretFile,'utf8'),carregarAdminToken(dir),{repo:persistencia.repo,atendimentosRepo:persistencia.atendimentosRepo,verificarPersistencia:persistencia.verificar,tipoPersistencia:persistencia.tipo});
     const server=app.listen(port,host,()=>console.log('FácilID: http://'+host+':'+port+' — documentação em /docs — armazenamento: '+persistencia.tipo));
     let encerrando=false;
     const encerrar=()=>{

@@ -5,6 +5,7 @@ import { EmissorScreen } from './src/screens/EmissorScreen';
 import { SucessoScreen } from './src/screens/SucessoScreen';
 import { Botao,Campo,Aviso } from './src/components/Ui';
 import { ControleAudio } from './src/components/ControleAudio';
+import { DiagnosticoConexao } from './src/components/DiagnosticoConexao';
 import { Chip,Sessao } from './src/services/identidade';
 import { styles as s } from './src/theme';
 export default function App() {
@@ -41,6 +42,7 @@ export default function App() {
             </View>}
           </>}
         </View>
+        <DiagnosticoConexao key={`diagnostico:${url}`} url={url}/>
         <EmissorScreen key={url} url={url} onUseCard={chip=>{setCartaoDemonstracao(chip);setMensagem('');setPage('login');fecharAjustes();}}/>
       </>}
       <View style={{gap:16,marginTop:20}}>

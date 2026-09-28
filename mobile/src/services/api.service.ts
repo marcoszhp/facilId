@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Diagnostico,interpretarSaude } from './diagnostico.service';
 import { Atendimento,StatusAtendimento } from './identidade';
 import { Chip, Perfil, ResumoCartao, Sessao, DadosEmissao, Desafio, Confirmacao, lerIdentidade, normalizarCpf } from './identidade';
 export function criarApi(url:string) {
@@ -8,6 +9,17 @@ export function criarApi(url:string) {
   // Futuras operações autenticadas reutilizam este transporte com cancelamento.
   const sessao=(token:string,signal?:AbortSignal)=>({headers:{Authorization:`Bearer ${token}`},signal});
   return {
+    async saude(signal?:AbortSignal):Promise<Diagnostico> {
+      try {
+        const resposta=await http.get<unknown>('/health',{signal,validateStatus:()=>true});
+        if(signal?.aborted)throw new axios.CanceledError();
+        return interpretarSaude(resposta.status,resposta.data);
+      }catch(error){
+        if(erroCancelado(error)||signal?.aborted)throw error;
+        if(axios.isAxiosError(error)&&error.response)return interpretarSaude(error.response.status,error.response.data);
+        return {api:'sem_resposta'};
+      }
+    },
     async horarios(token:string,signal?:AbortSignal) {return (await http.get<{horarios:string[]}>('/api/atendimentos/horarios',sessao(token,signal))).data;},
     async agendar(horario:string,token:string,signal?:AbortSignal) {return (await http.post<Atendimento>('/api/atendimentos',{horario},sessao(token,signal))).data;},
     async meusAtendimentos(token:string,signal?:AbortSignal) {return (await http.get<Atendimento[]>('/api/atendimentos/meus',sessao(token,signal))).data;},

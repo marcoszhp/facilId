@@ -24,7 +24,7 @@ jest.mock('../src/services/biometria.service', () => ({
 
 const api = {
   entrar: jest.fn(), perfil: jest.fn(), emitir: jest.fn(), usuarios: jest.fn(),
-  cartao: jest.fn(), bloquear: jest.fn(), confirmar: jest.fn(), foto: jest.fn(),
+  cartao: jest.fn(), bloquear: jest.fn(), confirmar: jest.fn(), foto: jest.fn(), saude: jest.fn(),
 };
 beforeEach(() => {
   Object.values(api).forEach(mock => mock.mockReset());
@@ -43,6 +43,19 @@ async function abrirResponsavel() {
   fireEvent.press(screen.getByRole('button', { name: 'Acessar área do responsável' }));
   await screen.findByRole('button', { name: 'Continuar para foto e assinatura' });
 }
+
+test('diagnóstico fica só na área do responsável e funciona antes da credencial, sob demanda',async()=>{
+  api.saude.mockResolvedValue({api:'acessivel',persistencia:{tipo:'mysql',status:'indisponivel'}});
+  render(<App/>);
+  expect(screen.queryByRole('button',{name:'Diagnosticar conexão'})).toBeNull();expect(api.saude).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button',{name:'Área do responsável'}));
+  expect(screen.getByLabelText('Credencial do responsável').props.value).toBe('');
+  fireEvent.press(screen.getByRole('button',{name:'Diagnosticar conexão'}));
+  expect(api.saude).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button',{name:'Verificar conexão'}));
+  await screen.findByText('MySQL: indisponível.');
+  expect(api.saude).toHaveBeenCalledWith(expect.any(AbortSignal));expect(api.usuarios).not.toHaveBeenCalled();
+});
 
 test('área do cidadão não emite nem lista cartões e responsável precisa autorizar antes do formulário', async () => {
   render(<App />);

@@ -15,6 +15,8 @@ Os testes verificam regras de autenticação, contratos, persistência, interfac
 | Revisão documental em **2026-09-26** | **10 documentos, 193 links locais válidos e 10 caminhos OpenAPI**; contrato validado por Swagger Parser e conferido com a declaração compilada. Cinco diagramas Mermaid revisados como texto, sem validação por renderização. Registro local: `reports/documentation-validation.json`. |
 | Agendamentos simulados, 27/09/2026 | **265 testes: 131 backend +119 mobile +15 SQL**, tipos e builds aprovados. `reports/poslogin-item3.json`; não inclui alterações posteriores do formulário em etapas. |
 | Emissão em etapas, 27/09/2026 | **273 testes: 131 backend +127 mobile +15 SQL**, tipos e builds aprovados. `reports/poslogin-item4.json`; oito novos cenários em `mobile/tests/EmissaoEtapas.test.tsx`, incluindo rascunho preservado e recuperação de falha da lista após emissão. |
+| Busca/filtros e paginação, 28/09/2026 | **319 testes: 172 backend +132 mobile +15 SQL**, tipos/build aprovados. `reports/poslogin-item5.json`. |
+| Diagnóstico API/persistência, 28/09/2026 | **332 testes: 174 backend +143 mobile +15 SQL**, tipos/build aprovados. `reports/poslogin-item6.json`; 2 novos casos backend e11 mobile (rede,503,JSON,incompatibilidade,cancelamento e área responsável). |
 | Hardware e acessibilidade assistiva | **Pendentes de execução manual** em ambiente identificado. Os cenários abaixo são critérios esperados, não resultados realizados. |
 
 O ambiente SQL validado historicamente foi **MariaDB 10.4.32 do XAMPP em Windows**. Não se deve atribuir essa evidência a um servidor MySQL 8 testado separadamente. As contagens são fotografias da versão indicada e precisam ser atualizadas a partir de uma execução real quando o código mudar.

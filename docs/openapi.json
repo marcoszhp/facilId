@@ -1235,11 +1235,11 @@
     },
     "/health": {
       "get": {
-        "summary": "Verificar disponibilidade da persistência",
-        "description": "No servidor MySQL executa SELECT 1. Não autentica cidadão nem certifica câmera, NFC, biometria ou integridade de todas as coletas.",
+        "summary": "Verificar API e persistência sem credenciais",
+        "description": "API disponível significa que este endpoint respondeu. No servidor MySQL executa SELECT 1; JSON identifica a simulação sem MySQL e não testa escrita em arquivos. Repositório customizado sem tipo declarado usa nao_informado; sem verificador usa nao_verificada. Não expõe host, URL, credenciais ou erros do driver. API sem resposta não permite concluir o estado do banco, inclusive se o banco impediu a inicialização do servidor. Não autentica cidadão nem certifica câmera, NFC, biometria ou integridade de todas as coletas.",
         "responses": {
           "200": {
-            "description": "Persistência disponível",
+            "description": "API acessível; conferir tipo e status da persistência",
             "headers": {
               "X-Request-Id": {
                 "description": "Identificador de correlação, sem dados pessoais.",
@@ -1253,8 +1253,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "additionalProperties": false,
                   "required": [
-                    "status"
+                    "status",
+                    "api",
+                    "persistencia"
                   ],
                   "properties": {
                     "status": {
@@ -1262,6 +1265,46 @@
                       "enum": [
                         "ok"
                       ]
+                    },
+                    "api": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "status"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "disponivel"
+                          ]
+                        }
+                      }
+                    },
+                    "persistencia": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "tipo",
+                        "status"
+                      ],
+                      "properties": {
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "mysql",
+                            "json",
+                            "nao_informado"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "disponivel",
+                            "nao_verificada"
+                          ]
+                        }
+                      }
                     }
                   }
                 }
@@ -1269,7 +1312,7 @@
             }
           },
           "503": {
-            "description": "Persistência indisponível",
+            "description": "API acessível, verificação da persistência falhou",
             "headers": {
               "X-Request-Id": {
                 "description": "Identificador de correlação, sem dados pessoais.",
@@ -1283,8 +1326,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "additionalProperties": false,
                   "required": [
                     "status",
+                    "api",
+                    "persistencia",
                     "mensagem"
                   ],
                   "properties": {
@@ -1293,6 +1339,45 @@
                       "enum": [
                         "indisponivel"
                       ]
+                    },
+                    "api": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "status"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "disponivel"
+                          ]
+                        }
+                      }
+                    },
+                    "persistencia": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "tipo",
+                        "status"
+                      ],
+                      "properties": {
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "mysql",
+                            "json",
+                            "nao_informado"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "indisponivel"
+                          ]
+                        }
+                      }
                     },
                     "mensagem": {
                       "type": "string",

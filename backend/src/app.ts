@@ -15,7 +15,7 @@ import { ErroColeta } from './services/coleta.service';
 import { AtendimentosRepository, JsonAtendimentosRepository } from './repositories/atendimentos.repository';
 import { atendimentosRoutes } from './routes/atendimentos.routes';
 import { ErroAtendimento } from './services/atendimento.service';
-export function createApp(dataDir:string,secret:string,adminToken=carregarAdminToken(dataDir),options?:{repo?:UsuariosRepository;atendimentosRepo?:AtendimentosRepository;verificarPersistencia?:()=>Promise<void>}) {
+export function createApp(dataDir:string,secret:string,adminToken=carregarAdminToken(dataDir),options?:{repo?:UsuariosRepository;atendimentosRepo?:AtendimentosRepository;verificarPersistencia?:()=>Promise<void>;tipoPersistencia?:'mysql'|'json'}) {
   const app=express(); const repo=options?.repo ?? new JsonUsuariosRepository(path.join(dataDir,'usuarios.json'));
   const atendimentos=options?.atendimentosRepo ?? new JsonAtendimentosRepository(path.join(dataDir,'atendimentos.json'));
   const auth=authService(secret);
@@ -28,8 +28,13 @@ export function createApp(dataDir:string,secret:string,adminToken=carregarAdminT
   app.use('/api',emissaoRoutes(repo,assinatura,adminToken,coletas));
   app.use(express.json({limit:'16kb'}));
   app.get('/health',async (_req,res)=>{
-    try {await options?.verificarPersistencia?.();res.json({status:'ok'});}
-    catch {res.status(503).json({status:'indisponivel',mensagem:'Banco de dados indisponível.'});}
+    const tipo=options?.tipoPersistencia ?? (options?.repo||options?.atendimentosRepo?'nao_informado':'json');
+    const api={status:'disponivel'};
+    try {
+      await options?.verificarPersistencia?.();
+      res.json({status:'ok',api,persistencia:{tipo,status:options?.verificarPersistencia?'disponivel':'nao_verificada'}});
+    }
+    catch {res.status(503).json({status:'indisponivel',mensagem:'Banco de dados indisponível.',api,persistencia:{tipo,status:'indisponivel'}});}
   });
   app.get('/openapi.json',(_req,res)=>res.json(swagger));
   app.use('/docs',swaggerUi.serve,swaggerUi.setup(swagger));

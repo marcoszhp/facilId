@@ -35,6 +35,8 @@ A credencial do responsável é diferente do PIN do cidadão. Ela é fornecida p
 
 Na **Área do responsável**, o botão **Ajustar conexão** abre o campo **Endereço do serviço**. Digitar o endereço e tocar em **Salvar conexão** não muda o serviço ainda. Confira o aviso e escolha **Confirmar mudança de conexão** para aplicar: isso reinicia o formulário e descarta o cartão preparado em memória, sem apagar os registros do banco. **Cancelar mudança de conexão** ou **Fechar ajustes** preserva o formulário e o cartão. Os ajustes não aparecem na entrada do cidadão.
 
+Na mesma área, **Diagnosticar conexão** → **Verificar conexão** consulta a API sem exigir a chave administrativa. A tela mostra separadamente a resposta da API e a situação do MySQL. Se a API não responder, o banco fica **não verificado**; isso não comprova que o MySQL parou. O modo JSON informa que não utiliza MySQL. **Cancelar verificação** ou **Fechar diagnóstico** interrompe a espera sem alterar cadastros. O resultado descreve apenas o momento da consulta.
+
 ## 3. Entrar como cidadão: três passos
 
 ### Passo 1 — Informe seu CPF

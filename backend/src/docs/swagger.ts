@@ -14,6 +14,15 @@ const parametroId = [{in: 'path', name: 'emissaoId', required: true, schema: id}
 const erroAdmin = {'401': response('Chave administrativa ausente ou incorreta', ref('Erro'))};
 const instante = {type: 'string', format: 'date-time', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$', description: 'ISO UTC canônico, com milissegundos e Z.'};
 const erroSessao = {'401': response('Sessão expirada, cartão bloqueado ou substituído', ref('Erro'))};
+const saude=(indisponivel:boolean)=>({type:'object',additionalProperties:false,required:['status','api','persistencia',...(indisponivel?['mensagem']:[])],properties:{
+  status:{type:'string',enum:[indisponivel?'indisponivel':'ok']},
+  api:{type:'object',additionalProperties:false,required:['status'],properties:{status:{type:'string',enum:['disponivel']}}},
+  persistencia:{type:'object',additionalProperties:false,required:['tipo','status'],properties:{
+    tipo:{type:'string',enum:['mysql','json','nao_informado']},
+    status:{type:'string',enum:indisponivel?['indisponivel']:['disponivel','nao_verificada']},
+  }},
+  ...(indisponivel?{mensagem:{type:'string',example:'Banco de dados indisponível.'}}:{}),
+}});
 const desenho = {type:'object',additionalProperties:false,required:['largura','altura','tracos'],properties:{
   largura:{type:'integer',enum:[320]},altura:{type:'integer',enum:[180]},
   tracos:{type:'array',minItems:1,maxItems:32,description:'Até 1500 pontos no total; pelo menos um segmento com deslocamento após arredondar para 2 casas.',items:{type:'array',minItems:2,maxItems:512,items:{type:'object',additionalProperties:false,required:['x','y'],properties:{x:{type:'number',minimum:0,maximum:320},y:{type:'number',minimum:0,maximum:180}}}}}
@@ -74,9 +83,9 @@ export const swagger = swaggerJsdoc({definition: {
     },
     '/api/atendimentos/meus': {get: {summary: 'Consultar somente os atendimentos do CPF autenticado', security: [{bearerAuth: []}], description: 'CPF sempre vem do JWT revalidado. Ordenados por horário; não aceita filtros ou parâmetros de consulta.', responses: {'200': response('Atendimentos do cidadão', {type: 'array', items: ref('Atendimento')}), '400': response('Consulta inválida', ref('Erro')), ...erroSessao}}},
     '/api/atendimentos/{id}/status': {patch: {summary: 'Responsável avança o estado de um atendimento', security: admin, parameters: [{in: 'path', name: 'id', required: true, schema: id}], description: 'Somente agendado → confirmado → concluido. Repetir o estado atual é idempotente e preserva atualizadoEm; não permite saltar uma etapa ou voltar.', requestBody: body({type: 'object', additionalProperties: false, required: ['status'], properties: {status: {type: 'string', enum: ['confirmado', 'concluido']}}}), responses: {'200': response('Atendimento atualizado', ref('Atendimento')), '400': response('Identificador ou corpo inválido', ref('Erro')), '404': response('Atendimento não encontrado', ref('Erro')), '409': response('Transição não permitida', ref('Erro')), ...erroAdmin}}},
-    '/health': {get: {summary:'Verificar disponibilidade da persistência',description:'No servidor MySQL executa SELECT 1. Não autentica cidadão nem certifica câmera, NFC, biometria ou integridade de todas as coletas.',responses:{
-      '200':response('Persistência disponível',{type:'object',required:['status'],properties:{status:{type:'string',enum:['ok']}}}),
-      '503':response('Persistência indisponível',{type:'object',required:['status','mensagem'],properties:{status:{type:'string',enum:['indisponivel']},mensagem:{type:'string',example:'Banco de dados indisponível.'}}})
+    '/health': {get: {summary:'Verificar API e persistência sem credenciais',description:'API disponível significa que este endpoint respondeu. No servidor MySQL executa SELECT 1; JSON identifica a simulação sem MySQL e não testa escrita em arquivos. Repositório customizado sem tipo declarado usa nao_informado; sem verificador usa nao_verificada. Não expõe host, URL, credenciais ou erros do driver. API sem resposta não permite concluir o estado do banco, inclusive se o banco impediu a inicialização do servidor. Não autentica cidadão nem certifica câmera, NFC, biometria ou integridade de todas as coletas.',responses:{
+      '200':response('API acessível; conferir tipo e status da persistência',saude(false)),
+      '503':response('API acessível, verificação da persistência falhou',saude(true))
     }}},
     '/api/emissao': {post: {
       summary: 'Emitir cartão com foto, assinatura desenhada e PIN', description: 'Toda emissão recebe UUID novo. Cartão anterior, suas sessões e credenciais de aparelho ficam inválidos. Corpo limitado a 64 KB; RSA/canonicalizador preservados.',

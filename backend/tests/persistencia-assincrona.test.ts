@@ -135,9 +135,23 @@ test('desafio que expira durante a espera do banco não libera acesso e fica con
 
 test('saúde verifica persistência injetada e expõe somente indisponibilidade sem detalhes do banco', async () => {
   const verificar = jest.fn<Promise<void>, []>().mockResolvedValue(undefined);
-  const monitorado = createApp(dir, secret, admin, {repo, verificarPersistencia: verificar});
-  expect((await request(monitorado).get('/health').expect(200)).body).toEqual({status: 'ok'});
+  const monitorado = createApp(dir, secret, admin, {repo, verificarPersistencia: verificar,tipoPersistencia:'mysql'});
+  expect((await request(monitorado).get('/health').expect(200)).body).toEqual({status: 'ok',api:{status:'disponivel'},persistencia:{tipo:'mysql',status:'disponivel'}});
   verificar.mockRejectedValueOnce(new Error('host e senha internos'));
-  expect((await request(monitorado).get('/health').expect(503)).body).toEqual({status: 'indisponivel', mensagem: 'Banco de dados indisponível.'});
-  expect((await request(app).get('/health').expect(200)).body).toEqual({status: 'ok'});
+  expect((await request(monitorado).get('/health').expect(503)).body).toEqual({status: 'indisponivel', mensagem: 'Banco de dados indisponível.',api:{status:'disponivel'},persistencia:{tipo:'mysql',status:'indisponivel'}});
+  expect((await request(monitorado).get('/health').expect(200)).body.persistencia.status).toBe('disponivel');
+  expect(verificar).toHaveBeenCalledTimes(3);
+});
+
+test('repositório customizado não é presumido MySQL e sem verificador não afirma banco disponível',async()=>{
+  expect((await request(app).get('/health').expect(200)).body).toEqual({status:'ok',api:{status:'disponivel'},persistencia:{tipo:'nao_informado',status:'nao_verificada'}});
+  const mysqlSemVerificador=createApp(dir,secret,admin,{repo,tipoPersistencia:'mysql'});
+  expect((await request(mysqlSemVerificador).get('/health').expect(200)).body.persistencia).toEqual({tipo:'mysql',status:'nao_verificada'});
+});
+
+test('modo padrão e persistência JSON explícita identificam simulação sem presumir MySQL',async()=>{
+  const padrao=createApp(dir,secret,admin);
+  expect((await request(padrao).get('/health').expect(200)).body.persistencia).toEqual({tipo:'json',status:'nao_verificada'});
+  const json=createApp(dir,secret,admin,{repo,tipoPersistencia:'json',verificarPersistencia:async()=>{}});
+  expect((await request(json).get('/health').expect(200)).body.persistencia).toEqual({tipo:'json',status:'disponivel'});
 });

@@ -6,13 +6,15 @@
 
 1. Inicie MySQL no XAMPP e confirme que está disponível.
 2. Inicie uma única API (`npm run dev`) e o cliente (`npm run web` ou Dev Client).
-3. Confira `/health`; entre como responsável somente para tarefas administrativas.
+3. Na Área do responsável, use **Diagnosticar conexão** → **Verificar conexão**, disponível antes da chave administrativa, ou consulte `/health` diretamente.
 4. Use dados fictícios em demonstrações habituais; confirme com o voluntário antes de coleta real.
 5. Ao encerrar, saia das sessões, interrompa os terminais e feche a área administrativa.
 
 Migração não é rotina diária. Não apague arquivos privados nem regenere chaves para solucionar erro de rede, porta ou banco. Não execute duas cópias do backend sobre a mesma pasta de coletas.
 
 ## Diagnóstico por sintoma
+
+O diagnóstico distingue **API acessível / MySQL disponível**, **API acessível / MySQL indisponível** e **API sem resposta / banco não verificado**. Uma resposta incompatível também deixa o banco não verificado. O modo JSON declara que não usa MySQL. Se o banco falhar antes da inicialização da API, ela pode nem abrir a porta; nesse caso o cliente não consegue determinar a causa pela rede. Confira o processo e sua configuração local. A verificação não altera dados e nunca deve mostrar segredos ou mensagens brutas do driver.
 
 | Sintoma | Verificação / ação indicada |
 | --- | --- |

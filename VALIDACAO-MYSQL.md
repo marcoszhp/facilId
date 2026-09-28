@@ -13,7 +13,9 @@ Os resultados abaixo são posteriores à integração descrita no restante deste
 | Item 4: emissão em três etapas, preservação dos dados e erros próximos aos campos | 273 testes: 131 backend +127 mobile +15 SQL; oito novos cenários em `mobile/tests/EmissaoEtapas.test.tsx` | `reports/poslogin-item4.json` / `.log` |
 | Item5: busca/filtros combinados e paginação optativa compatível | 319 testes: 172 backend +132 mobile +15 SQL; tipos/build aprovados | `reports/poslogin-item5.json` / `.log` |
 
-Itens6/7 (diagnóstico e histórico administrativo) ainda pendentes neste marco. A primeira tentativa SQL encontrou o XAMPP desligado; após iniciá-lo, os 15 testes SQL e o ciclo integrado passaram. A instalação principal ainda precisa do preparo aditivo da tabela de atendimentos. Nenhum teste físico adicional foi realizado. Os avisos existentes sobre foto, assinatura e biometria foram preservados.
+| Item6: diagnóstico público API/persistência na área responsável | 332 testes: 174 backend +143 mobile +15 SQL; tipos/build aprovados em28/09/2026; 13 novos casos | `reports/poslogin-item6.json` / `.log` |
+
+Item7 (histórico administrativo) ainda pendente neste marco. A primeira tentativa SQL encontrou o XAMPP desligado; após iniciá-lo, os 15 testes SQL e o ciclo integrado passaram. A instalação principal ainda precisa do preparo aditivo da tabela de atendimentos. Nenhum teste físico adicional foi realizado. Os avisos existentes sobre foto, assinatura e biometria foram preservados.
 
 ## Integração original
 

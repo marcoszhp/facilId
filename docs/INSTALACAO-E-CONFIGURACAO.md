@@ -84,7 +84,7 @@ Para conferir sem cadastrar nada:
 Invoke-RestMethod http://127.0.0.1:3000/health
 ```
 
-Resposta esperada: `status` igual a `ok`. A porta 3000 deve estar livre antes de iniciar outra API; execute apenas uma instância para a mesma base e pasta privada.
+No servidor configurado para MySQL, espere `status: "ok"`, `api.status: "disponivel"`, `persistencia.tipo: "mysql"` e `persistencia.status: "disponivel"`. Somente o campo `status` não comprova o uso do banco. O diagnóstico também está na Área do responsável, antes da chave administrativa. A porta 3000 deve estar livre antes de iniciar outra API; execute apenas uma instância para a mesma base e pasta privada.
 
 ## Variáveis de ambiente
 

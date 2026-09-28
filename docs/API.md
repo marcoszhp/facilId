@@ -121,7 +121,8 @@ Fontes: [rotas](../backend/src/routes/atendimentos.routes.ts), [schemas](../back
 
 ## Saúde e documentação
 
-- GET `/health`: 200 `{status:"ok"}`; se a verificação de persistência falhar, 503 `{status:"indisponivel",mensagem:"Banco de dados indisponível."}`. O servidor MySQL usa `SELECT 1`; esse resultado não certifica sensores, backups ou toda a mídia.
+- GET `/health`, sem credencial: informa `status` (`ok`/`indisponivel`), `api:{status:"disponivel"}` e `persistencia:{tipo,status}`. Tipos: `mysql`, `json` ou `nao_informado`; estados: `disponivel`, `indisponivel` ou `nao_verificada`. Retorna 200 quando a verificação passa ou não foi configurada; falha na verificação retorna 503 e mensagem genérica. `status:"ok"` sozinho não comprova conexão MySQL: consulte também os campos de persistência. Repositórios injetados sem tipo explícito são `nao_informado`.
+- O servidor MySQL usa `SELECT 1`; o resultado vale para o momento da consulta e não certifica sensores, backups ou toda a mídia. Sem resposta da API, o cliente deixa o banco **não verificado**. Respostas antigas ou incompatíveis também não comprovam saúde do banco. O diagnóstico não devolve configuração, credenciais nem erro bruto do driver.
 - GET `/openapi.json`: contrato em execução. GET `/docs`: Swagger UI, com rotas que podem alterar dados quando acionadas. Use **Try it out** apenas em uma base apropriada à demonstração.
 - Endereço desconhecido: 404 `{mensagem:"Endereço não encontrado."}`. Erros de parser/tamanho normalmente incluem `requestId` pelo tratador geral.
 
