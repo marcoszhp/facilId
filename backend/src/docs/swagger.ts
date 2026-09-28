@@ -45,6 +45,10 @@ export const swagger = swaggerJsdoc({definition: {
         assinatura_digital_orgao: {type: 'string',pattern:'^[A-Za-z0-9+/]+={0,2}$',maxLength:1024, description: 'RSA-SHA256 em base64; cobre os campos de identidade, versao e emissaoId'}
       }},
       ResumoCartao: {type: 'object', properties: {...cadastro.properties, emissaoId: id, estado}},
+      PaginaCartoes: {type: 'object', additionalProperties: false, required: ['itens', 'total', 'pagina', 'limite'], properties: {
+        itens: {type: 'array', items: ref('ResumoCartao')}, total: {type: 'integer', minimum: 0},
+        pagina: {type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER}, limite: {type: 'integer', minimum: 1, maximum: 100}
+      }},
       Erro: {type: 'object', properties: {mensagem: {type: 'string'}, sucesso:{type:'boolean',enum:[false],description:'Presente nas recusas da primeira etapa de autenticação.'}, tentarEm:{type:'integer',format:'int64',description:'Retomada após limite de fatores, em Unix epoch milissegundos.'}, requestId: {type: 'string', format: 'uuid', description: 'Correlação opcional; também disponível no cabeçalho X-Request-Id'}}},
       Perfil: {type: 'object', properties: cadastro.properties},
       Atendimento: {type: 'object', additionalProperties: false, required: ['id', 'protocolo', 'cpf', 'nome', 'horario', 'status', 'criadoEm', 'atualizadoEm'], properties: {
@@ -82,7 +86,12 @@ export const swagger = swaggerJsdoc({definition: {
     '/api/emissao/foto': {post:{summary:'Enviar foto privada de uma emissão',description:'Autorização administrativa é conferida antes do parser de 3 MB. Imagem decodificada limitada a 2 MB, formato/dimensões verificados. Até 50 pendências; limpeza de expiradas ao iniciar ou operar o repositório.',security:admin,requestBody:body(ref('Foto')),responses:{'201':response('Referência de uso único',ref('ReferenciaFoto')),'400':response('Formato inválido',ref('Erro')),'413':response('Foto ou corpo grande demais',ref('Erro')),'429':response('Muitas fotos pendentes',ref('Erro')),...erroAdmin}}},
     '/api/usuarios': {get: {
       summary: 'Listar histórico de emissões sem credenciais assinadas', security: admin,
-      responses: {'200': response('Resumos dos cartões v2', {type: 'array', items: ref('ResumoCartao')}), '400': response('Consulta inválida', ref('Erro')), ...erroAdmin}
+      description: 'Sem parâmetros, preserva o retorno ResumoCartao[]. Para paginar, envie pagina e limite juntos, uma única vez cada, como inteiros positivos seguros escritos somente com dígitos, sem zeros iniciais. Limite máximo 100. Parâmetros desconhecidos, repetidos, parciais ou malformados retornam 400; a autorização administrativa precede a validação da consulta. A ordem original é preservada e páginas além do total retornam itens vazios. Atualmente a listagem completa é fatiada em memória; para volumes maiores, mover contagem e paginação para SQL.',
+      parameters: [
+        {in: 'query', name: 'pagina', required: false, description: 'Obrigatório junto com limite; primeira página é 1.', schema: {type: 'integer', minimum: 1, maximum: Number.MAX_SAFE_INTEGER}, example: 1},
+        {in: 'query', name: 'limite', required: false, description: 'Obrigatório junto com pagina; no máximo 100 cartões por página.', schema: {type: 'integer', minimum: 1, maximum: 100}, example: 20}
+      ],
+      responses: {'200': response('Array sem consulta; objeto paginado quando pagina e limite são enviados', {oneOf: [{type: 'array', items: ref('ResumoCartao')}, ref('PaginaCartoes')]}), '400': response('Consulta inválida', ref('Erro')), ...erroAdmin}
     }},
     '/api/cartoes/{emissaoId}': {get: {
       summary: 'Responsável recupera cartão ativo para a demonstração', security: admin, parameters: parametroId,

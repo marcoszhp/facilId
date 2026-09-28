@@ -12,11 +12,13 @@ import { Chip,DadosEmissao,ResumoCartao,normalizarCpf } from '../services/identi
 import { gravarNfc,cancelarNfc } from '../services/nfc.service';
 import { falar,feedback,pararAudio } from '../services/feedback';
 import { styles as s } from '../theme';
+import { filtrarCartoes,FiltroEstadoCartao } from '../services/filtro-cartoes';
 type CampoEmissao='nome'|'cpf'|'idade'|'consentimento'|'foto'|'assinatura'|'pin'|'confirmacaoPin';
 type ErrosEmissao=Partial<Record<CampoEmissao,string>>;
 type AcaoConfirmavel={tipo:'emitir';dados:DadosEmissao;foto:FotoCapturada|null}|{tipo:'bloquear';cartao:ResumoCartao};
 export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=>void}) {
   const {width}=useWindowDimensions();
+  const [buscaCartoes,setBuscaCartoes]=useState(''),[estadoCartoes,setEstadoCartoes]=useState<FiltroEstadoCartao>('todos');
   const [etapa,setEtapa]=useState<1|2|3>(1),[errosCampos,setErrosCampos]=useState<ErrosEmissao>({}),[erroEmissao,setErroEmissao]=useState('');
   const [nome,setNome]=useState(''),[cpf,setCpf]=useState(''),[idade,setIdade]=useState('');
   const [credencial,setCredencial]=useState(''),[autorizado,setAutorizado]=useState(false),[cartoes,setCartoes]=useState<ResumoCartao[]>([]),[cartao,setCartao]=useState<Chip|null>(null);
@@ -28,20 +30,22 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
   const ocupado=useRef(false),{iniciar,vigente,cancelar}=useOperacao();
   const bloqueado=busy||!!confirmacao;
   const json=cartao?JSON.stringify(cartao):'';
+  const cartoesVisiveis=filtrarCartoes(cartoes,buscaCartoes,estadoCartoes);
+  function limparFiltros(){setBuscaCartoes('');setEstadoCartoes('todos');}
   useEffect(()=>{falar('Área do responsável. Informe a credencial fornecida pelo professor.');return()=>{acaoPendente.current=null;void cancelarNfc();pararAudio();};},[]);
   async function executar(action:(controle:AbortController)=>Promise<void>,emissao=false){
     if(ocupado.current)return;
     ocupado.current=true;const controle=iniciar();setBusy(true);setErro('');setErroEmissao('');setNotice('');
     try{await action(controle);}
     catch(e){if(vigente(controle)&&!erroCancelado(e)){
-      if(erroNaoAutorizado(e)){setAutorizado(false);setCredencial('');setCartoes([]);setCartao(null);limparCapturas();}
+      if(erroNaoAutorizado(e)){limparFiltros();setAutorizado(false);setCredencial('');setCartoes([]);setCartao(null);limparCapturas();}
       const msg=mensagemErro(e);if(emissao&&!erroNaoAutorizado(e))setErroEmissao(msg);else setErro(msg);feedback(msg,false);
     }}finally{if(vigente(controle)){ocupado.current=false;setBusy(false);setGravando(false);}}
   }
   function limparConfirmacao(){acaoPendente.current=null;setConfirmacao(null);}
   function limparCapturas(){limparConfirmacao();setEtapa(1);setErrosCampos({});setErroEmissao('');setCapturando(false);setFoto(null);setFotoId(undefined);setAssinatura(null);setEdicao(valor=>valor+1);setPin('');setConfirmacaoPin('');setConsentimento(false);}
   function mudarModo(proximo:'real'|'demonstracao'){limparCapturas();setModo(proximo);setErro('');setNotice('');}
-  function encerrar(){cancelar();ocupado.current=false;setBusy(false);setGravando(false);void cancelarNfc();setAutorizado(false);setCredencial('');setCartao(null);setCartoes([]);limparCapturas();setNome('');setCpf('');setIdade('');setErro('');setNotice('Acesso do responsável encerrado.');}
+  function encerrar(){limparFiltros();cancelar();ocupado.current=false;setBusy(false);setGravando(false);void cancelarNfc();setAutorizado(false);setCredencial('');setCartao(null);setCartoes([]);limparCapturas();setNome('');setCpf('');setIdade('');setErro('');setNotice('Acesso do responsável encerrado.');}
   async function atualizar(controle:AbortController){const lista=await criarApi(url).usuarios(credencial,controle.signal);if(vigente(controle))setCartoes(lista);}
   function descricaoConfirmacao(acao:AcaoConfirmavel){
     const pessoa=acao.tipo==='emitir'?acao.dados:acao.cartao;
@@ -192,8 +196,16 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
       </View>}
       <Text style={s.title}>Cartões emitidos</Text>
       <Botao title="Atualizar lista" secondary disabled={bloqueado} onPress={()=>void executar(atualizar)}/>
+      <Campo label="Buscar cartão por nome ou CPF" value={buscaCartoes} onChangeText={setBuscaCartoes} editable={!bloqueado} autoCapitalize="none" autoCorrect={false}/>
+      <Text style={s.label}>Filtrar por estado</Text>
+      {([
+        ['todos','Todos'],['ativo','Ativos'],['bloqueado','Bloqueados'],['substituido','Substituídos'],
+      ] as const).map(([valor,rotulo])=><Botao key={valor} title={`${rotulo}${estadoCartoes===valor?' (selecionado)':''}`} secondary={estadoCartoes!==valor} disabled={bloqueado} onPress={()=>setEstadoCartoes(valor)}/>)}
+      <Botao title="Limpar busca e filtros" secondary disabled={bloqueado||(!buscaCartoes&&estadoCartoes==='todos')} onPress={limparFiltros}/>
+      <Text style={s.text} accessibilityLiveRegion="polite">Exibindo {cartoesVisiveis.length} de {cartoes.length} cartões.</Text>
       {!cartoes.length&&<Text style={s.text}>Nenhum cartão emitido nesta versão. Se você tinha um cartão antigo, emita uma nova via.</Text>}
-      {cartoes.map(item=><View key={item.emissaoId} style={s.card}>
+      {!!cartoes.length&&!cartoesVisiveis.length&&<Text accessibilityLiveRegion="polite" style={s.text}>Nenhum cartão corresponde à busca e ao estado escolhidos. Limpe ou altere os filtros.</Text>}
+      {cartoesVisiveis.map(item=><View key={item.emissaoId} style={s.card}>
         <Text style={s.label}>{item.nome}</Text><Text style={s.text}>CPF: ***.***.***-{item.cpf.slice(-2)} • {item.estado==='substituido'?'substituído':item.estado}</Text>
         {item.estado==='ativo'&&<>
           <Botao title={`Preparar demonstração de ${item.nome}`} secondary disabled={bloqueado} onPress={()=>void executar(async controle=>{

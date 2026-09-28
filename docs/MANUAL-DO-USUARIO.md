@@ -136,6 +136,8 @@ No aplicativo nativo, **Gravar na tag NFC** inicia a escrita. **Cancelar gravaç
 
 Em **Cartões emitidos**, use **Atualizar lista**. Cada item mostra nome, CPF parcialmente oculto e estado: **ativo**, **bloqueado** ou **substituído**.
 
+Use **Buscar cartão por nome ou CPF** para localizar a pessoa; nomes aceitam variação de acentos/maiúsculas e o CPF pode estar com pontuação. Combine a busca com **Ativos**, **Bloqueados** ou **Substituídos**. **Todos** retira apenas o filtro de estado; **Limpar busca e filtros** restaura a lista inteira. A contagem mostra quantos cartões correspondem. Filtrar não altera registros nem o formulário de emissão. Encerrar o acesso limpa a busca.
+
 | Ação | Procedimento e resultado |
 | --- | --- |
 | Preparar um cartão existente | No item ativo, **Preparar demonstração de [nome]**; depois use o botão de demonstração acima. Não troca o PIN nem cria outra emissão. |

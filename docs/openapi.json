@@ -445,6 +445,38 @@
           }
         }
       },
+      "PaginaCartoes": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "itens",
+          "total",
+          "pagina",
+          "limite"
+        ],
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumoCartao"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pagina": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "limite": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      },
       "Erro": {
         "type": "object",
         "properties": {
@@ -1537,9 +1569,36 @@
             "adminToken": []
           }
         ],
+        "description": "Sem parâmetros, preserva o retorno ResumoCartao[]. Para paginar, envie pagina e limite juntos, uma única vez cada, como inteiros positivos seguros escritos somente com dígitos, sem zeros iniciais. Limite máximo 100. Parâmetros desconhecidos, repetidos, parciais ou malformados retornam 400; a autorização administrativa precede a validação da consulta. A ordem original é preservada e páginas além do total retornam itens vazios. Atualmente a listagem completa é fatiada em memória; para volumes maiores, mover contagem e paginação para SQL.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pagina",
+            "required": false,
+            "description": "Obrigatório junto com limite; primeira página é 1.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "example": 1
+          },
+          {
+            "in": "query",
+            "name": "limite",
+            "required": false,
+            "description": "Obrigatório junto com pagina; no máximo 100 cartões por página.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "example": 20
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Resumos dos cartões v2",
+            "description": "Array sem consulta; objeto paginado quando pagina e limite são enviados",
             "headers": {
               "X-Request-Id": {
                 "description": "Identificador de correlação, sem dados pessoais.",
@@ -1552,10 +1611,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ResumoCartao"
-                  }
+                  "oneOf": [
+                    {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ResumoCartao"
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaginaCartoes"
+                    }
+                  ]
                 }
               }
             }

@@ -55,7 +55,9 @@ Saída 201: `Chip` assinado com UUID novo. Nova emissão para o mesmo CPF torna 
 
 ### GET `/api/usuarios`
 
-Saída 200: `ResumoCartao[]`, ordenado pelo histórico de emissão. Query parameters são recusados com 400. Não há paginação, busca por parâmetro ou listagem de `facilid_legados` nesta rota. Credencial assinada completa é obtida separadamente para cartão ativo.
+Sem parâmetros, saída 200: `ResumoCartao[]`, ordenado pelo histórico de emissão, preservando o cliente atual. A paginação é optativa: `?pagina=1&limite=20` retorna `{itens:ResumoCartao[],total,pagina,limite}`. Ambos os parâmetros são obrigatórios nessa modalidade: inteiros positivos em decimal, sem espaços/zeros à esquerda, com `limite` até 100. Página além do fim retorna lista vazia; desconhecidos, duplicados ou malformados geram 400. A autorização administrativa antecede a consulta.
+
+A interface atual busca nome/CPF e filtra estado em memória. A rota ainda lê a lista antes de paginar, adequada ao volume escolar; para crescer, mover contagem e paginação para o repositório/SQL. Não há busca por parâmetro nem listagem de `facilid_legados` nesta rota. Credencial assinada completa é obtida separadamente para cartão ativo.
 
 ### GET `/api/cartoes/:emissaoId`
 

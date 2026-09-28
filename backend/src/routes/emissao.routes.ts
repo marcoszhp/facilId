@@ -8,6 +8,12 @@ import { exigirAdministrador } from '../services/admin.service';
 import { ColetasRepository } from '../repositories/coletas.repository';
 import { validarFoto } from '../services/coleta.service';
 
+const inteiroPositivoSeguro = z.string().regex(/^[1-9]\d*$/).transform(Number).pipe(z.number().int().positive().safe());
+const paginacaoSchema = z.object({
+  pagina: inteiroPositivoSeguro,
+  limite: inteiroPositivoSeguro.pipe(z.number().max(100))
+}).strict();
+
 export function emissaoRoutes(repo: UsuariosRepository, assinatura: ReturnType<typeof assinaturaService>, adminToken: string, coletas: ColetasRepository) {
   const router = Router();
   const administrador = exigirAdministrador(adminToken);
@@ -22,8 +28,15 @@ export function emissaoRoutes(repo: UsuariosRepository, assinatura: ReturnType<t
     res.status(201).json(await emitirPessoa(data.data, assinatura, repo, coletas));
   });
   router.get('/usuarios', administrador, async (req, res) => {
-    if (Object.keys(req.query).length) {res.status(400).json({mensagem: 'Esta consulta não aceita parâmetros.'}); return;}
-    res.json(await repo.listar());
+    const query = req.query;
+    if (!Object.keys(query).length) {res.json(await repo.listar()); return;}
+    const dados = paginacaoSchema.safeParse(query);
+    if (!dados.success) {res.status(400).json({mensagem: 'Envie pagina e limite como números inteiros positivos, com limite de até 100, sem outros parâmetros.'}); return;}
+    const {pagina, limite} = dados.data;
+    // Para volumes maiores, mover contagem e paginação para a consulta SQL do repositório.
+    const cartoes = await repo.listar();
+    const inicio = (pagina - 1) * limite;
+    res.json({itens: cartoes.slice(inicio, inicio + limite), total: cartoes.length, pagina, limite});
   });
   router.get('/cartoes/:emissaoId', administrador, async (req, res) => {
     if (!z.string().uuid().safeParse(req.params.emissaoId).success) {res.status(400).json({mensagem: 'Identificador de cartão inválido.'}); return;}
