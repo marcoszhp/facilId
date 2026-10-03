@@ -4,7 +4,7 @@
 
 O FácilID demonstra emissão de cartões assinados e autenticação acessível com CPF, cartão e confirmação por PIN ou credencial protegida pela biometria do aparelho. Esta documentação descreve o sistema implementado, seus procedimentos de uso e os limites que precisam ser considerados ao evoluí-lo.
 
-Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). Base inicial: `1a37bcf`; evolução pós-login em conclusão, com evidências em [VALIDACAO-MYSQL.md](../VALIDACAO-MYSQL.md). Versões diferentes coexistem deliberadamente: pacotes `1.0.0`, contrato OpenAPI `2.1.0` e identidade do cartão `versao: 2` não representam a mesma coisa.
+Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). Base inicial: `1a37bcf`; evolução pós-login concluída na [entrega dos sete itens](ENTREGA-POSLOGIN.md), com evidências em [VALIDACAO-MYSQL.md](../VALIDACAO-MYSQL.md). Versões diferentes coexistem deliberadamente: pacotes `1.0.0`, contrato OpenAPI `2.1.0` e identidade do cartão `versao: 2` não representam a mesma coisa.
 
 ## Escolha seu ponto de entrada
 

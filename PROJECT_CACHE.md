@@ -183,7 +183,7 @@ Eventos: DTO{id,emissaoId,cpf,nome,tipo,ocorridoEm,motivo}; tipo emissao/bloquei
 
 **Limites conhecidos:** aviso SafeAreaView depreciado; audit transitivo exige triagem específica; build Android completa/sensores reais/ensaios com idosos pendentes. Foto não reconhece rosto; desenho não comprova autoria; biometria do aparelho não vincula CPF. Cartão copiável; arquivos e SQL não têm transação distribuída. Sem contas individuais, auditoria completa, retenção/exclusão operacional, serviços municipais reais ou sincronização offline. Não inventar esse escopo.
 
-**Fechamento:** fontes validadas; gerar entrega por arquivo/diff e publicar os commits autorizados em marcoszhp/facilId/main. Confirme Git local/remoto antes de repetir publicação. Automação concluir-f-cilid-com-mysql-xampp permanece ACTIVE, respeitando margem preventiva5% e sem trabalho inventado quando concluído. Não comprar créditos/resets.
+**Fechamento:** fontes, instalação local e docs/ENTREGA-POSLOGIN.md concluídos; commit funcional fac58e2. Sem funcionalidades autorizadas pendentes. Publicar os commits em marcoszhp/facilId/main e conferir SHA remoto. Confirme Git local/remoto antes de repetir publicação. Automação concluir-f-cilid-com-mysql-xampp permanece ACTIVE, respeitando margem preventiva5% e sem trabalho inventado quando concluído. Não comprar créditos/resets.
 
 ## 11. Índice de localização
 
