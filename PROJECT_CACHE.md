@@ -1,6 +1,6 @@
 # PROJECT CACHE
 
-Base: **2026-09-26**, código em `1a37bcfc0405eae475b5d2d7fe171431b6b57475`, publicado em `main` de https://github.com/marcoszhp/facilId. Este cache é um índice, não uma especificação imutável. Confira diferenças posteriores somente no escopo da tarefa.
+Base original: **2026-09-26**, `1a37bcfc0405eae475b5d2d7fe171431b6b57475`. **Entrega atual concluída e publicada em 03/10/2026** em https://github.com/marcoszhp/facilId: código `fac58e2`, documentação `38efb6179bbda38f1fb26c5b4442dd115d710d7b` (HEAD remoto conferido após push). Este cache é um índice, não uma especificação imutável. Confira diferenças posteriores somente no escopo da tarefa.
 
 Atualização documental posterior à base: commit `8812e0b7deead44bedfc48750a138fd591e24f83`, publicado e confirmado em `origin/main` em 2026-09-26. Inclui guias em `docs/`, Swagger complementado e exportador OpenAPI. Sem mudança nos fluxos de autenticação/persistência.
 
@@ -183,7 +183,7 @@ Eventos: DTO{id,emissaoId,cpf,nome,tipo,ocorridoEm,motivo}; tipo emissao/bloquei
 
 **Limites conhecidos:** aviso SafeAreaView depreciado; audit transitivo exige triagem específica; build Android completa/sensores reais/ensaios com idosos pendentes. Foto não reconhece rosto; desenho não comprova autoria; biometria do aparelho não vincula CPF. Cartão copiável; arquivos e SQL não têm transação distribuída. Sem contas individuais, auditoria completa, retenção/exclusão operacional, serviços municipais reais ou sincronização offline. Não inventar esse escopo.
 
-**Fechamento:** fontes, instalação local e docs/ENTREGA-POSLOGIN.md concluídos; commit funcional fac58e2. Sem funcionalidades autorizadas pendentes. Publicar os commits em marcoszhp/facilId/main e conferir SHA remoto. Confirme Git local/remoto antes de repetir publicação. Automação concluir-f-cilid-com-mysql-xampp permanece ACTIVE, respeitando margem preventiva5% e sem trabalho inventado quando concluído. Não comprar créditos/resets.
+**Fechamento:** fontes, instalação local e docs/ENTREGA-POSLOGIN.md concluídos; commit funcional fac58e2. Sem trabalho autorizado pendente nesta rodada. Publicação confirmada em marcoszhp/facilId/main, SHA38efb6179bbda38f1fb26c5b4442dd115d710d7b. Não repetir implementação, testes ou publicação sem novo motivo. Documentação verificada:14arquivos,357links locais,15caminhos OpenAPI válidos e iguais ao Swagger compilado (reports/poslogin-final-docs-validation.json). Automação concluir-f-cilid-com-mysql-xampp permanece ACTIVE, respeitando margem preventiva5% e sem trabalho inventado quando concluído. Não comprar créditos/resets.
 
 ## 11. Índice de localização
 
