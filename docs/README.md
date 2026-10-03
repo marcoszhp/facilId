@@ -1,10 +1,10 @@
 # FácilID / AcessoSênior — documentação do projeto
 
-**Documentação atualizada em 27 de setembro de 2026 · Protótipo escolar**
+**Documentação atualizada em 3 de outubro de 2026 · Protótipo escolar**
 
 O FácilID demonstra emissão de cartões assinados e autenticação acessível com CPF, cartão e confirmação por PIN ou credencial protegida pela biometria do aparelho. Esta documentação descreve o sistema implementado, seus procedimentos de uso e os limites que precisam ser considerados ao evoluí-lo.
 
-Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). Base funcional conferida: `1a37bcf`, com a documentação OpenAPI complementada nesta edição. Versões diferentes coexistem deliberadamente: pacotes `1.0.0`, contrato OpenAPI `2.1.0` e identidade do cartão `versao: 2` não representam a mesma coisa.
+Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). Base inicial: `1a37bcf`; evolução pós-login em conclusão, com evidências em [VALIDACAO-MYSQL.md](../VALIDACAO-MYSQL.md). Versões diferentes coexistem deliberadamente: pacotes `1.0.0`, contrato OpenAPI `2.1.0` e identidade do cartão `versao: 2` não representam a mesma coisa.
 
 ## Escolha seu ponto de entrada
 
@@ -23,7 +23,7 @@ Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). Base fu
 ## Como interpretar os documentos
 
 - **Implementado** significa que existe código correspondente; não significa certificação, auditoria ou teste físico.
-- **Verificado automaticamente** identifica uma execução registrada e seu escopo. A última rodada completa anterior a esta edição passou em 203 testes, tipos e builds backend/web; veja [evidências](../VALIDACAO-MYSQL.md).
+- **Verificado automaticamente** identifica uma execução registrada e seu escopo. As contagens e a data de cada rodada estão nas [evidências](../VALIDACAO-MYSQL.md); uma execução antiga não valida mudanças posteriores.
 - **Validação manual pendente** cobre sensor NFC, biometria, câmera e demais comportamentos que precisam de aparelho real.
 - **Evolução proposta** não representa funcionalidade disponível nem compromisso de prazo.
 

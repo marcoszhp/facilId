@@ -17,6 +17,7 @@ Os testes verificam regras de autenticação, contratos, persistência, interfac
 | Emissão em etapas, 27/09/2026 | **273 testes: 131 backend +127 mobile +15 SQL**, tipos e builds aprovados. `reports/poslogin-item4.json`; oito novos cenários em `mobile/tests/EmissaoEtapas.test.tsx`, incluindo rascunho preservado e recuperação de falha da lista após emissão. |
 | Busca/filtros e paginação, 28/09/2026 | **319 testes: 172 backend +132 mobile +15 SQL**, tipos/build aprovados. `reports/poslogin-item5.json`. |
 | Diagnóstico API/persistência, 28/09/2026 | **332 testes: 174 backend +143 mobile +15 SQL**, tipos/build aprovados. `reports/poslogin-item6.json`; 2 novos casos backend e11 mobile (rede,503,JSON,incompatibilidade,cancelamento e área responsável). |
+| Histórico administrativo,03/10/2026 | **372 testes:191 backend +160 mobile +21 SQL**, tipos/build aprovados. `reports/poslogin-item7.json`. Eventos com rollback, migração, concorrência, reinício, autorização e consulta cancelável. |
 | Hardware e acessibilidade assistiva | **Pendentes de execução manual** em ambiente identificado. Os cenários abaixo são critérios esperados, não resultados realizados. |
 
 O ambiente SQL validado historicamente foi **MariaDB 10.4.32 do XAMPP em Windows**. Não se deve atribuir essa evidência a um servidor MySQL 8 testado separadamente. As contagens são fotografias da versão indicada e precisam ser atualizadas a partir de uma execução real quando o código mudar.

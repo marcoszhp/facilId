@@ -37,7 +37,7 @@ function abrirApp() {
 const emitir = (dados: object = {}, target = app) => request(target).post('/api/emissao').set('X-Admin-Token', admin).send({...coletaTeste, ...pessoa, ...dados});
 const perfil = (token: string, target = app) => request(target).get('/api/perfil').set('Authorization', `Bearer ${token}`);
 const bloquear = (id: string, target = app) => request(target).post(`/api/cartoes/${id}/bloquear`).set('X-Admin-Token', admin);
-async function quantidade(tabela: 'facilid_cartoes' | 'facilid_legados' | 'facilid_migracoes' | 'facilid_pessoas' | 'facilid_atendimentos') {
+async function quantidade(tabela: 'facilid_cartoes' | 'facilid_legados' | 'facilid_migracoes' | 'facilid_pessoas' | 'facilid_atendimentos' | 'facilid_eventos') {
   const [rows] = await pool!.query<RowDataPacket[]>(`SELECT COUNT(*) AS total FROM ${tabela}`);
   return Number(rows[0].total);
 }
@@ -114,6 +114,10 @@ test.each([false, true])('MySQL real: emissões simultâneas deixam um cartão a
   const respostas = await Promise.all([emitir(), emitir(), emitir()]);
   respostas.forEach(resposta => expect(resposta.status).toBe(201));
   const registros = await new MysqlUsuariosRepository(pool!).listar();
+  const eventos = await new MysqlUsuariosRepository(pool!).listarEventos();
+  expect(eventos.filter(e => e.tipo === 'emissao')).toHaveLength(existente ? 4 : 3);
+  expect(eventos.filter(e => e.tipo === 'substituicao')).toHaveLength(existente ? 3 : 2);
+  expect(new Set(eventos.map(e => e.emissaoId + ':' + e.tipo)).size).toBe(eventos.length);
   expect(registros).toHaveLength(existente ? 4 : 3);
   expect(registros.filter(registro => registro.estado === 'ativo')).toHaveLength(1);
   expect(registros.filter(registro => registro.estado === 'substituido')).toHaveLength(existente ? 3 : 2);
@@ -164,6 +168,7 @@ test('migração real preserva histórico, RSA, arquivos privados, PIN e bytes d
   expect(await quantidade('facilid_legados')).toBe(2);
   const repo = new MysqlUsuariosRepository(pool!);
   for (const registro of dados.cartoes) expect(await repo.buscarEmissao(registro.chip.emissaoId)).toEqual(registro);
+  expect(await repo.listarEventos()).toEqual([...dados.eventos].reverse().sort((a, b) => b.ocorridoEm.localeCompare(a.ocorridoEm)));
   app = abrirApp();
   await perfil(sessao.token).expect(200);
   expect((await loginCompleto(app, segundo, pessoa.cpf)).status).toBe(200);
@@ -179,6 +184,7 @@ test('migração recusa estado divergente ou registros removidos depois da impor
   await new MysqlUsuariosRepository(pool!).bloquear(chip.emissaoId);
   await expect(migrarJson(arquivo, pool!)).rejects.toMatchObject({code: 'FACILID_MIGRATION_CONFLICT'});
   expect((await new MysqlUsuariosRepository(pool!).buscarEmissao(chip.emissaoId))?.estado).toBe('bloqueado');
+  await pool!.execute('DELETE FROM facilid_eventos WHERE emissao_id = ?', [chip.emissaoId]);
   await pool!.execute('DELETE FROM facilid_cartoes WHERE emissao_id = ?', [chip.emissaoId]);
   await expect(migrarJson(arquivo, pool!)).rejects.toMatchObject({code: 'FACILID_MIGRATION_CONFLICT'});
   expect(await quantidade('facilid_cartoes')).toBe(0);
@@ -203,6 +209,7 @@ test('JSON v1 é preservado como legado sem alterar origem ou backup; JSON invá
   const {versao, emissaoId, ...legado} = chip;
   // Esvazia somente o schema artificial deste caso, antes de importar o arquivo v1.
   conferirBancoDeTeste();
+  await pool!.query('DELETE FROM facilid_eventos');
   await pool!.query('DELETE FROM facilid_cartoes');
   await pool!.query('DELETE FROM facilid_pessoas');
   const arquivo = path.join(dir, 'origem-v1.json'), backup = arquivo + '.legado-v1.json';
@@ -301,4 +308,64 @@ test('MySQL real: falha ao atualizar status faz rollback e não expõe erro do b
   expect(await repo.listar()).toEqual([atendimento]);
   await pool!.query('DROP TRIGGER falha_status');
   await request(app).patch(`/api/atendimentos/${atendimento.id}/status`).set('X-Admin-Token', admin).send({status: 'confirmado'}).expect(200);
+});
+
+test('eventos MySQL: bloqueio repetido, segunda via e reconexão preservam cronologia e identidade do cartão', async () => {
+  const primeiro = (await emitir().expect(201)).body;
+  await bloquear(primeiro.emissaoId).expect(200);
+  await bloquear(primeiro.emissaoId).expect(200);
+  const segundo = (await emitir({nome: 'Outro nome da mesma pessoa'}).expect(201)).body;
+  await bloquear(primeiro.emissaoId).expect(200);
+  const lista = await new MysqlUsuariosRepository(pool!).listarEventos();
+  expect(lista.map(e => e.tipo)).toEqual(['emissao','substituicao','bloqueio','emissao']);
+  expect(lista[0].emissaoId).toBe(segundo.emissaoId);
+  expect(lista[1].nome).toBe(pessoa.nome);
+  expect(await quantidade('facilid_eventos')).toBe(4);
+  await pool!.end(); pool = criarPoolMySql(config); app = abrirApp();
+  const resposta = await request(app).get('/api/eventos').set('X-Admin-Token', admin).expect(200);
+  expect(resposta.body).toEqual(lista);
+});
+
+test.each(['emissao','bloqueio','substituicao'])('eventos MySQL: falha no evento %s reverte cartão e histórico juntos', async tipo => {
+  const primeiro = (await emitir().expect(201)).body;
+  const repo = new MysqlUsuariosRepository(pool!), antes = await repo.listarEventos();
+  // Tipo vem somente da lista fixa deste teste e o trigger existe no schema artificial.
+  await pool!.query("CREATE TRIGGER falha_evento BEFORE INSERT ON facilid_eventos FOR EACH ROW BEGIN IF NEW.tipo = '" + tipo + "' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'detalhe privado artificial'; END IF; END");
+  const resposta = tipo === 'bloqueio' ? await bloquear(primeiro.emissaoId).expect(500) : await emitir().expect(500);
+  expect(JSON.stringify(resposta.body)).not.toContain('detalhe privado');
+  expect(await repo.listarEventos()).toEqual(antes);
+  expect(await quantidade('facilid_cartoes')).toBe(1);
+  expect((await repo.buscarEmissao(primeiro.emissaoId))?.estado).toBe('ativo');
+  await pool!.query('DROP TRIGGER falha_evento');
+  await bloquear(primeiro.emissaoId).expect(200);
+  expect(await quantidade('facilid_eventos')).toBe(2);
+});
+
+test('eventos MySQL: preparo aditivo de instalação antiga não inventa histórico', async () => {
+  const chip = (await emitir().expect(201)).body;
+  conferirBancoDeTeste();
+  await pool!.query('DROP TABLE facilid_eventos');
+  await prepararSchema(pool!);
+  const repo = new MysqlUsuariosRepository(pool!);
+  expect(await repo.listarEventos()).toEqual([]);
+  expect((await repo.buscarEmissao(chip.emissaoId))?.chip).toEqual(chip);
+  await bloquear(chip.emissaoId).expect(200);
+  expect((await repo.listarEventos()).map(e => e.tipo)).toEqual(['bloqueio']);
+});
+
+test('eventos MySQL: falha na importação reverte eventos, cartões, pessoas e marcador', async () => {
+  const jsonApp = createApp(dir, secret, admin);
+  await emitir({}, jsonApp).expect(201);
+  const arquivo = path.join(dir, 'usuarios.json'), antes = readFileSync(arquivo);
+  await pool!.query("CREATE TRIGGER falha_evento_importado BEFORE INSERT ON facilid_eventos FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Falha artificial de importação'");
+  await expect(migrarJson(arquivo, pool!)).rejects.toThrow();
+  for (const tabela of ['facilid_eventos','facilid_cartoes','facilid_pessoas','facilid_migracoes'] as const) expect(await quantidade(tabela)).toBe(0);
+  expect(readFileSync(arquivo)).toEqual(antes);
+  await pool!.query('DROP TRIGGER falha_evento_importado');
+  await migrarJson(arquivo, pool!);
+  const historico = await new MysqlUsuariosRepository(pool!).listarEventos();
+  await migrarJson(arquivo, pool!);
+  expect(await new MysqlUsuariosRepository(pool!).listarEventos()).toEqual(historico);
+  await pool!.query('DELETE FROM facilid_eventos');
+  await expect(migrarJson(arquivo, pool!)).rejects.toMatchObject({code: 'FACILID_MIGRATION_CONFLICT'});
 });

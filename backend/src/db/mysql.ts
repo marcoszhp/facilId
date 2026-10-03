@@ -95,6 +95,23 @@ export const MYSQL_SCHEMA = [
     UNIQUE KEY facilid_atendimento_protocolo (protocolo),
     KEY facilid_atendimentos_cpf (cpf),
     CONSTRAINT facilid_atendimentos_pessoa FOREIGN KEY (cpf) REFERENCES facilid_pessoas(cpf)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+  `CREATE TABLE IF NOT EXISTS facilid_eventos (
+    id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    emissao_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    cpf CHAR(11) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    tipo ENUM('emissao','bloqueio','substituicao') NOT NULL,
+    ocorrido_em DATETIME(3) NOT NULL,
+    motivo VARCHAR(160) NOT NULL,
+    ordem BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (id),
+    UNIQUE KEY facilid_eventos_ordem (ordem),
+    UNIQUE KEY facilid_evento_transicao (emissao_id, tipo),
+    KEY facilid_eventos_cronologia (ocorrido_em, ordem),
+    KEY facilid_eventos_cpf (cpf),
+    CONSTRAINT facilid_eventos_cartao FOREIGN KEY (emissao_id) REFERENCES facilid_cartoes(emissao_id),
+    CONSTRAINT facilid_eventos_pessoa FOREIGN KEY (cpf) REFERENCES facilid_pessoas(cpf)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 ];
 
@@ -105,6 +122,7 @@ export async function prepararSchema(pool: Pool): Promise<void> {
 // Verifica contrato sem ler registros e sem exigir privilégio CREATE no servidor.
 export async function validarSchema(pool: Pool): Promise<void> {
   await pool.query('SELECT cpf FROM facilid_pessoas LIMIT 0');
+  await pool.query('SELECT id, emissao_id, cpf, nome, tipo, ocorrido_em, motivo, ordem FROM facilid_eventos LIMIT 0');
   await pool.query('SELECT emissao_id, cpf, nome, idade, versao, rosto_hash, digital_template, assinatura_svg, assinatura_digital_orgao, estado, ordem, cpf_ativo, criado_em FROM facilid_cartoes LIMIT 0');
   await pool.query('SELECT conteudo_hash, cpf, identidade_json FROM facilid_legados LIMIT 0');
   await pool.query('SELECT fonte_hash, cartoes_importados, legados_importados, aplicada_em FROM facilid_migracoes LIMIT 0');

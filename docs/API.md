@@ -119,6 +119,12 @@ O estado avança de `agendado` → `confirmado` → `concluido`; repetir o estad
 
 Fontes: [rotas](../backend/src/routes/atendimentos.routes.ts), [schemas](../backend/src/schemas/atendimento.ts), [calendário e transições](../backend/src/services/atendimento.service.ts), [persistência SQL](../backend/src/repositories/mysql-atendimentos.repository.ts).
 
+## Histórico administrativo
+
+GET `/api/eventos` exige `X-Admin-Token`, não aceita parâmetros de consulta (400) e retorna uma lista de `EventoAdministrativo`: `{id,emissaoId,cpf,nome,tipo,ocorridoEm,motivo}`. IDs são UUIDs; `tipo` é `emissao`, `bloqueio` ou `substituicao`; `ocorridoEm` é ISO UTC com milissegundos. A ordem é da data mais recente à mais antiga, com desempate pela sequência de gravação. O CPF completo fica restrito à API administrativa; a interface o mascara.
+
+Motivos são descrições fixas, produzidas pelo servidor; não há operador individual, PIN, credencial, foto ou assinatura neste DTO. As rotas de escrita existentes permanecem iguais. Eventos e alterações de cartão são confirmados juntos na transação MySQL ou na escrita atômica do JSON. Uma ação sem mudança de estado não cria evento. A segunda via registra a nova emissão e a substituição dos cartões que ainda não estavam substituídos. A instalação não reconstrói eventos de cartões antigos.
+
 ## Saúde e documentação
 
 - GET `/health`, sem credencial: informa `status` (`ok`/`indisponivel`), `api:{status:"disponivel"}` e `persistencia:{tipo,status}`. Tipos: `mysql`, `json` ou `nao_informado`; estados: `disponivel`, `indisponivel` ou `nao_verificada`. Retorna 200 quando a verificação passa ou não foi configurada; falha na verificação retorna 503 e mensagem genérica. `status:"ok"` sozinho não comprova conexão MySQL: consulte também os campos de persistência. Repositórios injetados sem tipo explícito são `nao_informado`.

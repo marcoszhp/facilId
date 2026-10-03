@@ -52,7 +52,7 @@ O estado recuperável é um **conjunto**: banco SQL, toda a pasta privada indica
 Procedimento de backup proposto:
 
 1. Agendar uma pausa e encerrar a API, sem novas emissões/confirmações.
-2. Exportar estrutura e dados das quatro tabelas do banco escolhido, por ferramenta administrativa apropriada ao MariaDB local.
+2. Exportar estrutura e dados de todas as tabelas do banco escolhido (incluindo atendimentos e eventos administrativos), por ferramenta administrativa apropriada ao MariaDB local.
 3. Copiar integralmente o diretório privado e preservar configuração de conexão e segredos de ambiente que não estejam em arquivos. Guardar em destino privado com acesso restrito, fora do repositório e de compartilhamentos públicos.
 4. Registrar data, versão do código/banco, localização protegida e verificação de integridade do conjunto, sem colocar valores secretos no relatório.
 5. Validar restauração em **banco e diretório separados**, com a API principal parada, antes de depender desse backup.

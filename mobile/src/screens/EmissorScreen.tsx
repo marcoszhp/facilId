@@ -6,6 +6,7 @@ import { useOperacao } from '../components/useOperacao';
 import { AssinaturaManuscrita } from '../components/AssinaturaManuscrita';
 import { CapturaFoto,FotoCapturada } from '../components/CapturaFoto';
 import { AtendimentosAdmin } from '../components/AtendimentosAdmin';
+import { EventosAdmin } from '../components/EventosAdmin';
 import { AssinaturaDesenhada } from '../services/desenho-assinatura';
 import { criarApi,erroCancelado,erroNaoAutorizado,mensagemErro } from '../services/api.service';
 import { Chip,DadosEmissao,ResumoCartao,normalizarCpf } from '../services/identidade';
@@ -133,6 +134,7 @@ export function EmissorScreen({url,onUseCard}:{url:string;onUseCard:(chip:Chip)=
     </>:<>
       <Botao title="Encerrar acesso do responsável" secondary onPress={encerrar}/>
       <AtendimentosAdmin url={url} credencial={credencial} disabled={bloqueado} onUnauthorized={()=>{encerrar();setErro('Acesso do responsável encerrado. Informe uma credencial válida para entrar novamente.');}}/>
+      <EventosAdmin url={url} credencial={credencial} disabled={bloqueado} onUnauthorized={()=>{encerrar();setErro('Acesso do responsável encerrado. Informe uma credencial válida para entrar novamente.');}}/>
       <Text style={s.title}>Emitir cartão</Text>
       <Text style={s.text}>Use CPF fictício nos testes. A coleta real exige uma pessoa voluntária que concorde. Nunca fotografe terceiros sem autorização. Emitir novamente para o mesmo CPF substitui o cartão anterior.</Text>
       <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={s.label}>Etapa {etapa} de 3: {etapa===1?'Dados':etapa===2?'Foto e assinatura':'PIN e revisão'}</Text>

@@ -53,6 +53,11 @@ export const swagger = swaggerJsdoc({definition: {
         rosto_hash: {type: 'string',minLength:1,maxLength:128,description:'SHA-256 dos bytes da foto; modo demonstração usa imagem artificial.'}, digital_template: {type: 'string',minLength:1,maxLength:128,description:'Marcador BIOMETRIA_LOCAL_NAO_COLETADA ou DEMONSTRACAO_SEM_BIOMETRIA, nunca um template biométrico.'}, assinatura_svg: {type: 'string',minLength:1,maxLength:300,description:'Nome legado: agora armazena sha256:<hash do SVG gerado de coordenadas>, não o SVG.'},
         assinatura_digital_orgao: {type: 'string',pattern:'^[A-Za-z0-9+/]+={0,2}$',maxLength:1024, description: 'RSA-SHA256 em base64; cobre os campos de identidade, versao e emissaoId'}
       }},
+      EventoAdministrativo: {type: 'object', additionalProperties: false, required: ['id', 'emissaoId', 'cpf', 'nome', 'tipo', 'ocorridoEm', 'motivo'], properties: {
+        id, emissaoId: id, cpf: cadastro.properties.cpf, nome: cadastro.properties.nome,
+        tipo: {type: 'string', enum: ['emissao', 'bloqueio', 'substituicao']}, ocorridoEm: instante,
+        motivo: {type: 'string', description: 'Descrição fixa da operação, definida pelo servidor, sem texto livre nem operador individual.'}
+      }},
       ResumoCartao: {type: 'object', properties: {...cadastro.properties, emissaoId: id, estado}},
       PaginaCartoes: {type: 'object', additionalProperties: false, required: ['itens', 'total', 'pagina', 'limite'], properties: {
         itens: {type: 'array', items: ref('ResumoCartao')}, total: {type: 'integer', minimum: 0},
@@ -93,6 +98,11 @@ export const swagger = swaggerJsdoc({definition: {
       responses: {'201': response('Novo cartão assinado', ref('Chip')), '400': response('Cadastro inválido', ref('Erro')), ...erroAdmin}
     }},
     '/api/emissao/foto': {post:{summary:'Enviar foto privada de uma emissão',description:'Autorização administrativa é conferida antes do parser de 3 MB. Imagem decodificada limitada a 2 MB, formato/dimensões verificados. Até 50 pendências; limpeza de expiradas ao iniciar ou operar o repositório.',security:admin,requestBody:body(ref('Foto')),responses:{'201':response('Referência de uso único',ref('ReferenciaFoto')),'400':response('Formato inválido',ref('Erro')),'413':response('Foto ou corpo grande demais',ref('Erro')),'429':response('Muitas fotos pendentes',ref('Erro')),...erroAdmin}}},
+    '/api/eventos': {get: {
+      summary: 'Consultar histórico administrativo de cartões', security: admin,
+      description: 'Eventos de emissão, bloqueio e substituição gravados atomicamente com o estado do cartão. Mais recentes primeiro, por ocorridoEm e, em empate, pela ordem inversa de gravação. Não aceita parâmetros de consulta. Repetir bloqueio ou substituir cartão já substituído não duplica eventos. Dados anteriores à implantação ficam sem eventos retroativos. Motivos são definidos pelo servidor; não inclui operador individual, PIN, credenciais ou mídias.',
+      responses: {'200': response('Eventos administrativos', {type: 'array', items: ref('EventoAdministrativo')}), '400': response('Consulta inválida', ref('Erro')), ...erroAdmin}
+    }},
     '/api/usuarios': {get: {
       summary: 'Listar histórico de emissões sem credenciais assinadas', security: admin,
       description: 'Sem parâmetros, preserva o retorno ResumoCartao[]. Para paginar, envie pagina e limite juntos, uma única vez cada, como inteiros positivos seguros escritos somente com dígitos, sem zeros iniciais. Limite máximo 100. Parâmetros desconhecidos, repetidos, parciais ou malformados retornam 400; a autorização administrativa precede a validação da consulta. A ordem original é preservada e páginas além do total retornam itens vazios. Atualmente a listagem completa é fatiada em memória; para volumes maiores, mover contagem e paginação para SQL.',

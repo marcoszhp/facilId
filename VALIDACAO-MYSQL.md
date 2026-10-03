@@ -1,8 +1,8 @@
 # Validação — integração com MySQL do XAMPP
 
-## Evolução em andamento — propósito pós-login e usabilidade (2026-09-26)
+## Evolução concluída — propósito pós-login e usabilidade (2026-09-26)
 
-Os resultados abaixo são posteriores à integração descrita no restante deste documento. O pedido tem sete itens; os cinco primeiros estão concluídos neste marco. Cada ciclo executou tipos, testes backend/mobile/SQL e builds backend/web, com dados de teste isolados.
+Os resultados abaixo são posteriores à integração descrita no restante deste documento. O pedido tem sete itens; todos estão concluídos em 03/10/2026. Cada ciclo executou tipos, testes backend/mobile/SQL e builds backend/web, com dados de teste isolados.
 
 | Marco | Resultado | Evidência local |
 | --- | --- | --- |
@@ -11,11 +11,15 @@ Os resultados abaixo são posteriores à integração descrita no restante deste
 | Item 2: ajustes só na área do responsável, rascunho e confirmação explícita da mudança | 218 testes: 115+93+10; oito novos casos em `mobile/tests/Conexao.test.tsx` | `reports/poslogin-item2.json` / `.log` |
 | Item 3: agendamento simulado, protocolo, isolamento por cidadão e gestão de status | 265 testes: 131 backend +119 mobile +15 SQL; tipos e builds aprovados em 27/09/2026 | `reports/poslogin-item3.json` / `.log` / `.patch` |
 | Item 4: emissão em três etapas, preservação dos dados e erros próximos aos campos | 273 testes: 131 backend +127 mobile +15 SQL; oito novos cenários em `mobile/tests/EmissaoEtapas.test.tsx` | `reports/poslogin-item4.json` / `.log` |
-| Item5: busca/filtros combinados e paginação optativa compatível | 319 testes: 172 backend +132 mobile +15 SQL; tipos/build aprovados | `reports/poslogin-item5.json` / `.log` |
+| Item 5: busca/filtros combinados e paginação optativa compatível | 319 testes: 172 backend +132 mobile +15 SQL; tipos/build aprovados | `reports/poslogin-item5.json` / `.log` |
+| Item 6: diagnóstico público API/persistência na área responsável | 332 testes: 174 backend +143 mobile +15 SQL; tipos/build aprovados em 28/09/2026; 13 novos casos | `reports/poslogin-item6.json` / `.log` |
+| Item 7: histórico administrativo e migração de eventos | 372 testes: 191 backend +160 mobile +21 SQL; tipos/build aprovados em 03/10/2026 | `reports/poslogin-item 7.json` / `.log` |
 
-| Item6: diagnóstico público API/persistência na área responsável | 332 testes: 174 backend +143 mobile +15 SQL; tipos/build aprovados em28/09/2026; 13 novos casos | `reports/poslogin-item6.json` / `.log` |
+**Sete itens concluídos.** A primeira rodada do item 7 encontrou duas falhas na simulação de renameSync dos testes; a importação do módulo fs no teste foi corrigida. A rodada seguinte passou integralmente, sem alteração de fontes durante o ciclo (hash `a17cd12342f54ee52711e079296f5b9be4fb7a0994c6a61ffd3b4a229d67137e`). Novos testes do item 7: 17 backend, 17 mobile e 6 SQL; a concorrência e a migração existentes também passaram a verificar os eventos. Revisão dirigida de atomicidade/migração não identificou defeito acionável.
 
-Item7 (histórico administrativo) ainda pendente neste marco. A primeira tentativa SQL encontrou o XAMPP desligado; após iniciá-lo, os 15 testes SQL e o ciclo integrado passaram. A instalação principal ainda precisa do preparo aditivo da tabela de atendimentos. Nenhum teste físico adicional foi realizado. Os avisos existentes sobre foto, assinatura e biometria foram preservados.
+Em 03/10, com a API parada, o preparo local acrescentou `facilid_atendimentos` e `facilid_eventos` ao banco `facilid`. Checksums/contagens das tabelas anteriores e a impressão dos arquivos privados permaneceram iguais; nenhuma importação foi repetida e nenhuma chave foi regenerada. Evidência sem segredos: `reports/poslogin-local-setup.json`.
+
+Histórico anterior: A primeira tentativa SQL encontrou o XAMPP desligado; após iniciá-lo, os 15 testes SQL e o ciclo integrado passaram. Naquele marco, a instalação principal ainda precisava do preparo aditivo, concluído em 03/10 conforme registro acima. Nenhum teste físico adicional foi realizado. Os avisos existentes sobre foto, assinatura e biometria foram preservados.
 
 ## Integração original
 

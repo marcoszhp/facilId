@@ -130,7 +130,7 @@ test('migração preserva bytes do arquivo legado e dados; cartão v1 requer ree
   writeFileSync(file, original);
   const migrado = createApp(dir, secret, admin);
   expect(readFileSync(file + '.legado-v1.json', 'utf8')).toBe(original);
-  expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({versao: 2, cartoes: [], legados: [legado]});
+  expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({versao: 2, cartoes: [], legados: [legado], eventos: []});
   expect((await entrar(legado, migrado)).status).toBe(401);
   expect((await entrar(legado, migrado)).body.mensagem).toMatch(/novo cartão/);
   const novo = await request(migrado).post('/api/emissao').set('X-Admin-Token', admin).send({...coletaTeste,...pessoa}).expect(201);

@@ -10,7 +10,7 @@ Este documento descreve os controles existentes e seus limites. O FácilID é um
 
 | Ativo | Localização e exposição |
 | --- | --- |
-| Identidade e histórico dos cartões | MySQL/MariaDB: `facilid_cartoes`, `facilid_pessoas`, `facilid_legados`, `facilid_migracoes`. CPF, nome e idade não têm cifra de aplicação no SQL. No modo JSON explícito, ficam em `DATA_DIR/usuarios.json`. |
+| Identidade e histórico dos cartões | MySQL/MariaDB: `facilid_cartoes`, `facilid_pessoas`, `facilid_legados`, `facilid_migracoes`, `facilid_atendimentos` e `facilid_eventos`. CPF, nome e idade não têm cifra de aplicação no SQL. No modo JSON explícito, ficam em `DATA_DIR/usuarios.json`. |
 | Cartão JSON, QR ou NFC | Contém identidade, referências por hash e assinatura RSA. É legível e copiável; assinatura não significa confidencialidade. |
 | Foto e assinatura desenhada | Arquivos cifrados em `DATA_DIR/coletas/`; nenhuma rota pública entrega essas mídias. A consulta administrativa devolve somente metadados. |
 | PIN e credenciais de aparelho | Índice cifrado `DATA_DIR/coletas/indice.bin`: salt/hash do PIN, hashes de credenciais e controle de tentativas. PIN em claro não é persistido. |
@@ -27,7 +27,7 @@ Este documento descreve os controles existentes e seus limites. O FácilID é um
 | Copiar cartão ou QR | PIN ou credencial de aparelho exigido após leitura; estado consultado no servidor | O cartão continua copiável. CPF não é segredo; não deve contar como fator secreto. |
 | Reutilizar confirmação ou confirmar em paralelo | Desafio curto, reserva antes de consultas assíncronas e consumo após sucesso | Desafios ficam em memória de uma instância; não existe coordenação entre servidores. |
 | Adivinhar PIN | scrypt com salt aleatório, comparação constante e bloqueio de tentativas por emissão | PIN tem seis dígitos. Não há limitação geral por IP nem proteção completa contra exaustão de recursos. |
-| Acessar área administrativa sem autorização | `X-Admin-Token`, comparação constante, autorização antes de parsers de foto/emissão | Token compartilhado: não há contas individuais, perfis de permissão ou trilha completa de auditoria. |
+| Acessar área administrativa sem autorização | `X-Admin-Token`, comparação constante, autorização antes de parsers de foto/emissão | Token compartilhado: o histórico registra emissão/bloqueio/substituição, sem identificar uma pessoa como operadora. Não há contas individuais, perfis de permissão ou trilha completa de auditoria. |
 | Injetar SQL ou markup | Consultas parametrizadas; identificador de banco validado; SVG gerado de coordenadas validadas | Não substitui revisão de futuras consultas/rotas. Não há sanitização geral de qualquer conteúdo arbitrário. |
 | Ler arquivos privados sem a chave AES | AES-256-GCM autenticado para foto, SVG e índice | Chave está na mesma árvore de dados; acesso à pasta completa compromete a proteção. |
 | Interceptar tráfego na rede | Servidor inicia em loopback por padrão | HTTP local não oferece TLS. Expor a API em rede exige proteção adicional do transporte e do ambiente. |
@@ -102,7 +102,7 @@ Em suspeita de cartão perdido, bloqueie a emissão e realize nova emissão assi
 ## 8. Requisitos ainda pendentes para uso real
 
 - Transporte HTTPS e proteção do ambiente; usuário SQL com permissões mínimas apropriadas, sem depender do administrador local do XAMPP.
-- Administradores individuais, controle de permissões, auditoria, recuperação assistida de acesso e gestão/revogação de aparelhos.
+- Administradores individuais, controle de permissões, auditoria completa com autoria verificável, recuperação assistida de acesso e gestão/revogação de aparelhos.
 - Política operacional de retenção/exclusão, finalidade e consentimento, incluindo cópias de segurança.
 - Gestão de chaves separada dos dados, rotação planejada, restauração comprovada e reconciliação após falhas entre SQL e arquivos.
 - Proteção contra abuso e carga, observabilidade sem dados sensíveis e revisão independente de segurança.

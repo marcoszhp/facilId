@@ -17,12 +17,12 @@ jest.mock('../src/components/AssinaturaManuscrita',()=>({AssinaturaManuscrita:({
   const React=require('react'),{Button}=require('react-native'),{assinaturaDemonstracao}=require('../src/services/desenho-assinatura');
   return React.createElement(Button,{title:demonstracao?'Usar assinatura fictícia':'Confirmar desenho de teste',onPress:()=>onConfirm(assinaturaDemonstracao())});
 }}));
-const api={emitir:jest.fn(),usuarios:jest.fn(),foto:jest.fn(),cartao:jest.fn(),bloquear:jest.fn(),atendimentos:jest.fn()};
+const api={emitir:jest.fn(),usuarios:jest.fn(),foto:jest.fn(),cartao:jest.fn(),bloquear:jest.fn(),atendimentos:jest.fn(),eventos:jest.fn()};
 beforeEach(()=>{
   Object.values(api).forEach(mock=>mock.mockReset());
   jest.mocked(criarApi).mockReturnValue(api as unknown as ReturnType<typeof criarApi>);
   api.usuarios.mockResolvedValue([]);api.emitir.mockResolvedValue(cartao);api.foto.mockResolvedValue({id:'foto-protegida-de-teste',hash:'hash-de-teste'});
-  api.atendimentos.mockResolvedValue([]);
+  api.atendimentos.mockResolvedValue([]);api.eventos.mockResolvedValue([]);
 });
 
 test('encerrar responsável cancela consulta de atendimentos e ignora resposta tardia',async()=>{
@@ -205,4 +205,37 @@ test('sair da tela antes de confirmar descarta emissão sem envio de foto ou esc
   await screen.findByRole('button',{name:'Confirmar'});
   tela.unmount();
   expect(api.foto).not.toHaveBeenCalled();expect(api.emitir).not.toHaveBeenCalled();expect(api.bloquear).not.toHaveBeenCalled();
+});
+
+
+test('histórico só aparece após credencial e encerrar acesso apaga eventos já consultados',async()=>{
+  api.eventos.mockResolvedValueOnce([{id:'evento-teste',emissaoId:cartao.emissaoId,cpf:cartao.cpf,nome:'Pessoa do histórico',tipo:'emissao',ocorridoEm:'2026-10-03T12:00:00.000Z',motivo:'Emissão solicitada.'}]);
+  render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);
+  expect(screen.queryByRole('button',{name:'Consultar histórico administrativo'})).toBeNull();expect(api.eventos).not.toHaveBeenCalled();
+  await autorizar();expect(api.eventos).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button',{name:'Consultar histórico administrativo'}));await screen.findByText('Pessoa do histórico');
+  fireEvent.press(screen.getByRole('button',{name:'Encerrar acesso do responsável'}));expect(screen.queryByText('Pessoa do histórico')).toBeNull();
+  await autorizar();expect(screen.queryByText('Pessoa do histórico')).toBeNull();expect(api.eventos).toHaveBeenCalledTimes(1);
+});
+
+test('encerrar acesso aborta histórico pendente e ignora 401 tardio depois de autenticar novamente',async()=>{
+  const consulta=pendente<[]>();api.eventos.mockReturnValueOnce(consulta.promise);
+  render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();
+  fireEvent.press(screen.getByRole('button',{name:'Consultar histórico administrativo'}));const signal=api.eventos.mock.calls[0][1] as AbortSignal;
+  fireEvent.press(screen.getByRole('button',{name:'Encerrar acesso do responsável'}));expect(signal.aborted).toBe(true);
+  await autorizar();
+  await act(async()=>consulta.rejeitar(Object.assign(new Error('expired'),{isAxiosError:true,response:{status:401}})));
+  expect(screen.getByRole('button',{name:'Encerrar acesso do responsável'})).toBeTruthy();expect(screen.queryByRole('alert')).toBeNull();
+});
+
+test('401 no histórico limpa credencial, PIN, foto e confirmação pendente sem emitir',async()=>{
+  const consulta=pendente<[]>();api.eventos.mockReturnValueOnce(consulta.promise);
+  render(<EmissorScreen url="http://localhost:3000" onUseCard={jest.fn()}/>);await autorizar();
+  fireEvent.press(screen.getByRole('button',{name:'Consultar histórico administrativo'}));
+  preencher();prepararColeta();fireEvent.press(screen.getByRole('button',{name:'Gerar cartão'}));expect(screen.getByRole('button',{name:'Confirmar'})).toBeTruthy();
+  await act(async()=>consulta.rejeitar(Object.assign(new Error('expired'),{isAxiosError:true,response:{status:401}})));
+  await screen.findByText('Acesso do responsável encerrado. Informe uma credencial válida para entrar novamente.');
+  expect(screen.getByLabelText('Credencial do responsável').props.value).toBe('');expect(screen.queryByLabelText('Foto confirmada para esta emissão')).toBeNull();
+  await autorizar();expect(screen.getByLabelText('PIN de acesso (6 números)',{includeHiddenElements:true}).props.value).toBe('');
+  expect(screen.queryByRole('button',{name:'Confirmar'})).toBeNull();expect(api.emitir).not.toHaveBeenCalled();expect(api.foto).not.toHaveBeenCalled();
 });

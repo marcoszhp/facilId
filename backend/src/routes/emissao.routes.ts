@@ -27,6 +27,10 @@ export function emissaoRoutes(repo: UsuariosRepository, assinatura: ReturnType<t
     if (!data.success) {res.status(400).json({mensagem: 'Confira os dados, o PIN de 6 números e a assinatura desenhada. No modo real, confirme o consentimento e capture a foto.'}); return;}
     res.status(201).json(await emitirPessoa(data.data, assinatura, repo, coletas));
   });
+  router.get('/eventos', administrador, async (req, res) => {
+    if (Object.keys(req.query).length) {res.status(400).json({mensagem: 'A consulta de eventos não aceita parâmetros.'}); return;}
+    res.json(await repo.listarEventos());
+  });
   router.get('/usuarios', administrador, async (req, res) => {
     const query = req.query;
     if (!Object.keys(query).length) {res.json(await repo.listar()); return;}

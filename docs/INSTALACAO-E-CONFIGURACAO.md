@@ -1,6 +1,6 @@
 # Instalação e configuração
 
-**Atualização dos atendimentos simulados:** em uma instalação existente, pare a API e execute `npm run db:setup` e `npm run db:check` antes de reiniciá-la. O preparo acrescenta `facilid_atendimentos` com `CREATE TABLE IF NOT EXISTS`, preservando os registros anteriores. Não repita a importação JSON por causa dessa atualização. Faça backup conforme o guia de operação antes de mudar a estrutura de uma base com dados importantes.
+**Atualização dos atendimentos simulados e do histórico administrativo:** em uma instalação existente, pare a API e execute `npm run db:setup` e `npm run db:check` antes de reiniciá-la. O preparo acrescenta `facilid_atendimentos` e `facilid_eventos` com `CREATE TABLE IF NOT EXISTS`, preservando os registros anteriores. Não repita a importação JSON por causa dessa atualização. Faça backup conforme o guia de operação antes de mudar a estrutura de uma base com dados importantes.
 
 [Índice](README.md) · [Operação e problemas comuns](OPERACAO-E-MANUTENCAO.md)
 

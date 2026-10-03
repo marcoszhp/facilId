@@ -21,6 +21,7 @@ beforeEach(() => {
   base = new JsonUsuariosRepository(path.join(dir, 'dados-do-adaptador.json'));
   repo = {
     listar: jest.fn(async () => base.listar()),
+    listarEventos: jest.fn(async () => base.listarEventos()),
     buscar: jest.fn(async cpf => base.buscar(cpf)),
     buscarEmissao: jest.fn(async id => base.buscarEmissao(id)),
     salvar: jest.fn(async chip => {base.salvar(chip);}),

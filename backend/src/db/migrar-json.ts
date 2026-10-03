@@ -4,7 +4,7 @@ import { Pool, RowDataPacket } from 'mysql2/promise';
 import { z } from 'zod';
 import { chipSchema } from '../schemas/payload';
 import { arquivoSchema, registroCartaoSchema } from '../repositories/usuarios.repository';
-import { carregarRegistrosMySql, inserirRegistroMySql } from '../repositories/mysql-usuarios.repository';
+import { carregarEventosMySql, carregarRegistrosMySql, inserirEventoMySql, inserirRegistroMySql } from '../repositories/mysql-usuarios.repository';
 
 const legadoSchema = chipSchema.omit({versao: true, emissaoId: true});
 type CodigoMigracao = 'FACILID_MIGRATION_INVALID' | 'FACILID_MIGRATION_CONFLICT';
@@ -22,7 +22,7 @@ export async function migrarJson(file: string, pool: Pool): Promise<ResultadoMig
   try {
     const dados: unknown = JSON.parse(original.toString('utf8').replace(/^\uFEFF/, ''));
     arquivo = Array.isArray(dados)
-      ? {versao: 2, cartoes: [], legados: legadoSchema.array().parse(dados)}
+      ? {versao: 2, cartoes: [], legados: legadoSchema.array().parse(dados), eventos: []}
       : arquivoSchema.parse(dados);
     const ids = new Set<string>(), ativos = new Set<string>();
     for (const registro of arquivo.cartoes) {
@@ -77,12 +77,16 @@ export async function migrarJson(file: string, pool: Pool): Promise<ResultadoMig
       if (!origem || origem.cpf !== existente.cpf || origem.identidade !== identidade) throw conflito();
       hashesExistentes.add(existente.conteudo_hash);
     }
+    const eventosExistentes = await carregarEventosMySql(conexao, true);
+    // Um prefixo idêntico permite completar uma importação parcial sem trocar o desempate
+    // por ordem de gravação. Histórico extra, editado ou fora de ordem é conflito.
+    if (eventosExistentes.some((evento, indice) => JSON.stringify(evento) !== JSON.stringify(arquivo.eventos[indice]))) throw conflito();
     const fonteHash = hash(original);
     const [anteriores] = await conexao.execute<RowDataPacket[]>(
       'SELECT fonte_hash FROM facilid_migracoes WHERE fonte_hash = ? FOR UPDATE', [fonteHash]
     );
     // Histórico sem seus registros indica exclusão/edição posterior. Não recriar credenciais.
-    if (anteriores.length && (existentes.length !== arquivo.cartoes.length || legadosExistentes.length !== legados.size)) throw conflito();
+    if (anteriores.length && (existentes.length !== arquivo.cartoes.length || legadosExistentes.length !== legados.size || eventosExistentes.length !== arquivo.eventos.length)) throw conflito();
 
     let cartoesImportados = 0, legadosImportados = 0;
     for (const registro of arquivo.cartoes) {
@@ -91,6 +95,7 @@ export async function migrarJson(file: string, pool: Pool): Promise<ResultadoMig
       await inserirRegistroMySql(conexao, registro);
       cartoesImportados++;
     }
+    for (const evento of arquivo.eventos.slice(eventosExistentes.length)) await inserirEventoMySql(conexao, evento);
     for (const [id, legado] of legados) {
       if (hashesExistentes.has(id)) continue;
       await conexao.execute('INSERT INTO facilid_legados (conteudo_hash, cpf, identidade_json) VALUES (?, ?, ?)', [id, legado.cpf, legado.identidade]);

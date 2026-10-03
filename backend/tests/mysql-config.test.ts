@@ -65,7 +65,7 @@ test('SQL para importação manual coincide com o esquema usado no código compi
   const normalizar = (sql: string) => sql.replace(/--[^\r\n]*/g,'').replace(/\s+/g,' ').trim();
   const externo = texto.split(';').map(normalizar).filter(Boolean);
   expect(externo).toEqual(MYSQL_SCHEMA.map(normalizar));
-  expect(externo).toHaveLength(5);
+  expect(externo).toHaveLength(6);
   for (const sql of externo) {
     expect(sql).toMatch(/^CREATE TABLE IF NOT EXISTS facilid_/);
     expect(sql).toContain('ENGINE=InnoDB'); expect(sql).toContain('CHARSET=utf8mb4');
@@ -84,7 +84,7 @@ test('preparo de tabelas não cria ou escolhe outro banco e falha interrompe o p
 test('verificação de prontidão não precisa DDL nem lê registros pessoais', async () => {
   const query = jest.fn().mockResolvedValue([[],[]]);
   await validarSchema({query} as unknown as Pool);
-  expect(query).toHaveBeenCalledTimes(5);
+  expect(query).toHaveBeenCalledTimes(6);
   for (const [sql] of query.mock.calls) expect(sql).toMatch(/^SELECT .+ FROM facilid_[a-z]+ LIMIT 0$/);
   query.mockRejectedValueOnce(new Error('Esquema ausente.'));
   await expect(validarSchema({query} as unknown as Pool)).rejects.toThrow('Esquema ausente.');

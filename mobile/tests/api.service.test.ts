@@ -148,3 +148,14 @@ test('foto só é enviada ao endpoint administrativo e conserva o cancelamento',
     signal, headers: { 'X-Admin-Token': 'admin-de-teste' },
   }));
 });
+
+
+test('histórico administrativo preserva ordem e dados, com token administrativo e cancelamento próprios',async()=>{
+  const api=criarApi('http://localhost:3000'),{signal}=new AbortController();
+  const eventos=[{id:'evento-recente',tipo:'bloqueio'},{id:'evento-antigo',tipo:'emissao'}];
+  get.mockResolvedValueOnce({data:eventos});
+  await expect(api.eventos('admin-eventos',signal)).resolves.toBe(eventos);
+  expect(get).toHaveBeenCalledWith('/api/eventos',{headers:{'X-Admin-Token':'admin-eventos'},signal});
+  get.mockResolvedValueOnce({data:sessao().perfil});await api.perfil('jwt-cidadao',signal);
+  expect(get).toHaveBeenLastCalledWith('/api/perfil',{headers:{Authorization:'Bearer jwt-cidadao'},signal});
+});

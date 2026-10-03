@@ -69,8 +69,9 @@ As opções ficam no arquivo privado `backend/.env`, com o modelo em [backend/.e
 | `facilid_legados` | Cartões antigos preservados como histórico, sem liberação de acesso. |
 | `facilid_migracoes` | Registro da importação para impedir duplicação. |
 | `facilid_atendimentos` | Atendimento simulado, protocolo, CPF, horário exclusivo e situação. |
+| `facilid_eventos` | Emissão, bloqueio e substituição, com data e motivo; sem identificação individual do responsável. |
 
-Para atualizar uma instalação existente, pare a API e execute `npm run db:setup` e `npm run db:check`; isso acrescenta a tabela sem recriar dados. Não repita a importação JSON. Após entrar, use **Agendar atendimento na secretaria**; o responsável confirma e conclui pela área administrativa. Consulte o [manual](docs/MANUAL-DO-USUARIO.md).
+Para atualizar uma instalação existente, pare a API e execute `npm run db:setup` e `npm run db:check`; isso acrescenta as tabelas ausentes sem recriar dados. Não repita a importação JSON. Após entrar, use **Agendar atendimento na secretaria**; o responsável confirma e conclui pela área administrativa. Consulte o [manual](docs/MANUAL-DO-USUARIO.md).
 
 Emissão, segunda via e bloqueio usam transações. Um índice impede dois cartões ativos para o mesmo CPF; emissões simultâneas são coordenadas por pessoa. As consultas usam parâmetros. O esquema legível está em [schema-mysql.sql](backend/src/db/schema-mysql.sql); o comando de preparo já o aplica, sem importação manual pelo phpMyAdmin.
 
@@ -100,7 +101,7 @@ O backend guarda foto, SVG e índice de fatores cifrados com AES-256-GCM em `bac
 
 No aplicativo, a foto e o desenho ficam em memória durante a emissão e são limpos ao concluir ou sair. O arquivo temporário criado pela câmera nativa é removido após a captura, inclusive se a resposta chegar após sair da tela. Uploads sem emissão expiram após 15 minutos e são removidos no próximo acesso ao repositório ou reinício; não há temporizador que apague arquivos com o servidor desligado. Coletas já emitidas permanecem para o histórico, inclusive de cartões bloqueados ou substituídos. Ainda falta uma política operacional de exclusão e retenção: encerre demonstrações com dados reais de acordo com o combinado com os voluntários. Não apague chaves isoladamente, pois isso torna as coletas ilegíveis.
 
-Use HTTPS fora do teste local. Este protótipo roda em uma única instância; as transações MySQL abrangem os cartões, mas não tornam atômicos o banco e os arquivos de coletas juntos. A aplicação remove a coleta se o salvamento falhar, porém uma interrupção abrupta ainda exige recuperação operacional. Gestão individual de administradores, recuperação de conta, auditoria e gestão de chaves continuam necessárias para uso real. O servidor confirma a posse da credencial do aparelho, sem atestado criptográfico de hardware nem garantia contra um cliente comprometido.
+Use HTTPS fora do teste local. Este protótipo roda em uma única instância; as transações MySQL abrangem os cartões, mas não tornam atômicos o banco e os arquivos de coletas juntos. A aplicação remove a coleta se o salvamento falhar, porém uma interrupção abrupta ainda exige recuperação operacional. O histórico administrativo registra operações de cartões, mas não identifica operadores nem cobre todos os acessos. Gestão individual de administradores, recuperação de conta, auditoria completa e gestão de chaves continuam necessárias para uso real. O servidor confirma a posse da credencial do aparelho, sem atestado criptográfico de hardware nem garantia contra um cliente comprometido.
 
 ## O que este protótipo realmente comprova
 

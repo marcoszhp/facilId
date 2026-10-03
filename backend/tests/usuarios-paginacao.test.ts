@@ -12,7 +12,7 @@ const cartoes: ResumoCartao[] = Array.from({length: 5}, (_, indice) => ({
   estado: (['ativo', 'bloqueado', 'substituido'] as const)[indice % 3]
 }));
 const repo: jest.Mocked<UsuariosRepository> = {
-  listar: jest.fn(), buscar: jest.fn(), buscarEmissao: jest.fn(), salvar: jest.fn(), bloquear: jest.fn()
+  listarEventos: jest.fn(), listar: jest.fn(), buscar: jest.fn(), buscarEmissao: jest.fn(), salvar: jest.fn(), bloquear: jest.fn()
 };
 let dir: string, app: ReturnType<typeof createApp>;
 beforeAll(() => {

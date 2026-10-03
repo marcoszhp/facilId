@@ -69,7 +69,7 @@ O cartão pode ser copiado. Sua assinatura protege contra alteração sem a chav
 | --- | --- | --- |
 | Próxima validação | Usabilidade com idosos, sensores e build Android completa. | Roteiro executado, ambiente/aparelhos registrados, resultados e falhas reproduzíveis. |
 | Evolução funcional | Solicitações municipais fictícias e remarcação de atendimentos. | Escopo adicional ainda não implementado; os agendamentos simples da secretaria já têm rotas protegidas e estado persistido. |
-| Operação ampliada | Administradores individuais, auditoria, retenção/exclusão e recuperação. | Política definida, testes de abuso e restauração, direitos de acesso revisados. |
+| Operação ampliada | Administradores individuais, auditoria completa com autoria, retenção/exclusão e recuperação. | Política definida, testes de abuso e restauração, direitos de acesso revisados. |
 | Uso real | Infraestrutura, proteção de dados e avaliação independente. | Requisitos específicos, análise técnica/jurídica aplicável, testes e responsáveis definidos. |
 
 Reconhecimento facial, prova de vida e sensores externos ficam fora da demonstração atual. Adicioná-los exige outro projeto de integração/avaliação; não podem ser simulados como se fossem validação real.

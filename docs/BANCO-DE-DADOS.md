@@ -6,7 +6,7 @@
 
 ## 1. Escopo da persistência
 
-O banco padrão chama-se `facilid`, configurável por `DB_NAME`. Guarda cartões assinados, estados, registros legados, controle de importação e atendimentos simulados. Fotos, SVG completo, hashes de PIN e de credenciais de dispositivo permanecem em arquivos privados cifrados. Não existem contas individuais de administradores nem integração com serviços municipais reais.
+O banco padrão chama-se `facilid`, configurável por `DB_NAME`. Guarda cartões assinados, estados, registros legados, controle de importação, atendimentos simulados e eventos administrativos. Fotos, SVG completo, hashes de PIN e de credenciais de dispositivo permanecem em arquivos privados cifrados. Não existem contas individuais de administradores nem integração com serviços municipais reais.
 
 | Fonte | Papel |
 | --- | --- |
@@ -25,6 +25,8 @@ Todas as tabelas usam **InnoDB**, `utf8mb4` e collation padrão `utf8mb4_unicode
 erDiagram
   facilid_pessoas ||--o{ facilid_cartoes : possui
   facilid_pessoas ||--o{ facilid_atendimentos : agenda
+  facilid_cartoes ||--o{ facilid_eventos : registra
+  facilid_pessoas ||--o{ facilid_eventos : referencia
   facilid_pessoas {
     char cpf PK
   }
@@ -52,6 +54,16 @@ erDiagram
     enum status
     datetime criado_em
     datetime atualizado_em
+  }
+  facilid_eventos {
+    char id PK
+    char emissao_id FK
+    char cpf FK
+    varchar nome
+    enum tipo
+    datetime ocorrido_em
+    varchar motivo
+    bigint ordem UK
   }
   facilid_legados {
     char conteudo_hash PK
@@ -131,6 +143,21 @@ Essa tabela controla importação de dados; não constitui ferramenta geral de v
 
 Esta tabela é adicionada por `npm run db:setup` em instalações existentes, sem recriar as tabelas anteriores. Não há migração de atendimentos JSON para SQL no importador legado; trocar adaptador continua sendo uma troca de base, não sincronização.
 
+### `facilid_eventos`
+
+| Coluna | Tipo | Regra e significado |
+| --- | --- | --- |
+| `id` | `CHAR(36)` ASCII | UUID, chave primária. |
+| `emissao_id` | `CHAR(36)` ASCII | FK `facilid_eventos_cartao` para cartão; API: `emissaoId`. |
+| `cpf` | `CHAR(11)` ASCII | FK `facilid_eventos_pessoa`; índice por CPF. |
+| `nome` | `VARCHAR(100)` | Nome do titular no cartão relacionado. |
+| `tipo` | `ENUM('emissao','bloqueio','substituicao')` | Ação registrada, sem identificar operador. |
+| `ocorrido_em` | `DATETIME(3)` | UTC gerado pela aplicação, preservado na importação; API: `ocorridoEm`. |
+| `motivo` | `VARCHAR(160)` | Descrição fixa e validada conforme o tipo; sem texto livre. |
+| `ordem` | `BIGINT UNSIGNED AUTO_INCREMENT` | Desempate de gravação; não exige sequência sem lacunas. |
+
+UNIQUE `facilid_evento_transicao(emissao_id,tipo)` impede repetir a mesma transição; `facilid_eventos_ordem` mantém sequência única e `facilid_eventos_cronologia(ocorrido_em,ordem)` atende a ordem de exibição. FKs não têm exclusão em cascata. A tabela nasce vazia em instalações antigas: não se atribuem datas fictícias a operações passadas.
+
 ## 4. Consultas, transações e concorrência
 
 `MysqlUsuariosRepository` implementa `UsuariosRepository`. `listar()` devolve resumos em ordem de inserção; `buscar(cpf)` busca somente o ativo; `buscarEmissao(emissaoId)` devolve chip e estado. Dados vindos do banco são convertidos e validados por Zod. Valores de usuário entram por parâmetros; múltiplas instruções SQL estão desativadas no driver.
@@ -138,6 +165,8 @@ Esta tabela é adicionada por `npm run db:setup` em instalações existentes, se
 **Emissão/segunda via — `salvar(chip)`:** abre transação, faz UPSERT da linha de pessoa, marca cartões anteriores como `substituido`, insere o novo ativo e confirma. O UPSERT adquire lock exclusivo por CPF inclusive para pessoa já existente. A versão anterior com `INSERT IGNORE` e promoção posterior de lock causava disputa em emissões concorrentes; não restaurar esse padrão na emissão. O índice UNIQUE acrescenta proteção à regra de um ativo. Falha executa rollback e libera a conexão.
 
 **Bloqueio — `bloquear(emissaoId)`:** localiza o CPF, bloqueia pessoa e cartão nessa ordem, muda `ativo` para `bloqueado` e confirma. Cartões já substituídos permanecem substituídos; emissão inexistente retorna `undefined`. A mesma ordem de locks da emissão reduz conflitos.
+
+As mesmas transações também inserem os eventos: um para a nova emissão, um por cartão que muda para substituído e um por bloqueio efetivo. Repetições sem mudança não geram eventos. Se o evento não puder ser salvo, o estado do cartão também sofre rollback. `listarEventos()` devolve data decrescente, depois ordem decrescente. No JSON, o campo opcional de entrada `eventos` assume lista vazia ao ler v2 antigo; novas gravações persistem cartões e eventos juntos no mesmo arquivo.
 
 Essas transações protegem somente o SQL. `emitirPessoa()` grava a coleta privada antes do cartão e tenta removê-la se a emissão falhar. Não há commit atômico envolvendo banco e arquivos, nem suporte a várias instâncias com esse armazenamento privado.
 
@@ -156,12 +185,13 @@ O pool usa até cinco conexões, fila de cem solicitações, timeout de conexão
 
 Execute com a API parada e após backup. A função `migrarJson(file, pool)` lê a origem sem instanciar `JsonUsuariosRepository`; assim evita a conversão automática de v1 feita pelo construtor desse adaptador. **Não modifica, renomeia, reassina nem apaga a origem ou suas chaves.**
 
-1. Lê os bytes e valida JSON v1 (array de identidades antigas) ou envelope v2 `{versao, cartoes, legados}`. Rejeita UUIDs repetidos e mais de um cartão ativo para o mesmo CPF na origem.
+1. Lê os bytes e valida JSON v1 (array de identidades antigas) ou envelope v2 `{versao, cartoes, legados, eventos?}`. Eventos existentes são validados por ID, tipo/motivo e vínculo com o cartão; não se reconstrói histórico ausente. Rejeita UUIDs repetidos e mais de um cartão ativo para o mesmo CPF na origem.
 2. Calcula IDs estáveis para legados, incluindo a ocorrência para preservar duplicatas originais.
 3. Obtém lock nomeado do banco com `GET_LOCK`, aguardando até dez segundos; abre transação e bloqueia as linhas consultadas.
 4. Compara registros existentes com a origem. Cartão ou legado extra, conteúdo diferente ou estado alterado gera conflito; não sobrescreve destino divergente.
 5. Insere somente registros ausentes, preservando IDs, assinaturas e estados. Não valida novamente a assinatura RSA nessa etapa; a autenticação continua responsável por verificá-la com a chave original.
-6. Registra hash dos bytes e contagens, faz commit e libera lock/conexão. Falha causa rollback.
+6. Importa eventos preservando IDs, datas, motivos e ordem de gravação, na mesma transação; prefixo idêntico do histórico pode ser completado, mas eventos extras, alterados, removidos após importação ou fora de ordem causam conflito.
+7. Registra hash dos bytes e contagens, faz commit e libera lock/conexão. Falha causa rollback.
 
 Retorno: `{cartoesImportados, legadosImportados, jaAplicada}`. Reexecutar o mesmo arquivo sobre a mesma base consistente retorna zero importações e `jaAplicada: true`. Se há marcador de importação mas registros foram removidos, a migração recusa recriá-los. Alterações posteriores no destino, como bloqueios e novas emissões, podem tornar uma reexecução conflitante; esse comando não é sincronização recorrente.
 

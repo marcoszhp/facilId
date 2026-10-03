@@ -154,6 +154,12 @@ Antes de confirmar bloqueio ou emissão, confira a pessoa e a consequência. Uma
 
 Use **Consultar atendimentos da secretaria** e **Atualizar atendimentos**. Confira pessoa, CPF parcialmente oculto, data e protocolo. A ação **Confirmar atendimento de…** muda um pedido de agendado para confirmado; depois, **Concluir atendimento de…** o encerra. O cidadão vê a mudança ao atualizar sua lista ou entrar novamente. Não há identificação individual do operador nesta versão.
 
+### 5.7 Consultar histórico administrativo
+
+Depois de autorizar a área responsável, use **Consultar histórico administrativo**. A lista mostra nome, CPF parcialmente oculto, tipo, data no horário de Brasília e motivo, do evento mais recente ao mais antigo. **Atualizar histórico** consulta novamente o servidor; após emitir, bloquear ou substituir um cartão, atualize para conferir a operação. **Cancelar consulta do histórico** interrompe a espera e **Fechar histórico** fecha a seção.
+
+Os motivos são registrados automaticamente conforme a operação. Não há campo para justificar com texto livre nem identificação de quem usou a chave compartilhada. Bloquear outra vez um cartão já bloqueado não cria evento duplicado. Cartões anteriores à implantação podem não ter eventos: o sistema não inventa datas ou ações passadas.
+
 ## 6. Ajuda e recuperação de erros
 
 | Situação | Como continuar |

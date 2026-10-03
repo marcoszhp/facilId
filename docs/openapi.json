@@ -411,6 +411,58 @@
           }
         }
       },
+      "EventoAdministrativo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "emissaoId",
+          "cpf",
+          "nome",
+          "tipo",
+          "ocorridoEm",
+          "motivo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emissaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cpf": {
+            "type": "string",
+            "pattern": "^[0-9]{11}$",
+            "example": "12345678900"
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "example": "Maria Silva"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "emissao",
+              "bloqueio",
+              "substituicao"
+            ]
+          },
+          "ocorridoEm": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+            "description": "ISO UTC canônico, com milissegundos e Z."
+          },
+          "motivo": {
+            "type": "string",
+            "description": "Descrição fixa da operação, definida pelo servidor, sem texto livre nem operador individual."
+          }
+        }
+      },
       "ResumoCartao": {
         "type": "object",
         "properties": {
@@ -1607,6 +1659,98 @@
           },
           "429": {
             "description": "Muitas fotos pendentes",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Falha interna ou de persistência; não indica credencial inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eventos": {
+      "get": {
+        "summary": "Consultar histórico administrativo de cartões",
+        "security": [
+          {
+            "adminToken": []
+          }
+        ],
+        "description": "Eventos de emissão, bloqueio e substituição gravados atomicamente com o estado do cartão. Mais recentes primeiro, por ocorridoEm e, em empate, pela ordem inversa de gravação. Não aceita parâmetros de consulta. Repetir bloqueio ou substituir cartão já substituído não duplica eventos. Dados anteriores à implantação ficam sem eventos retroativos. Motivos são definidos pelo servidor; não inclui operador individual, PIN, credenciais ou mídias.",
+        "responses": {
+          "200": {
+            "description": "Eventos administrativos",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventoAdministrativo"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Consulta inválida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de correlação, sem dados pessoais.",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erro"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chave administrativa ausente ou incorreta",
             "headers": {
               "X-Request-Id": {
                 "description": "Identificador de correlação, sem dados pessoais.",

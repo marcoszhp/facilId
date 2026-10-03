@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Diagnostico,interpretarSaude } from './diagnostico.service';
-import { Atendimento,StatusAtendimento } from './identidade';
+import { Atendimento,StatusAtendimento,EventoAdministrativo } from './identidade';
 import { Chip, Perfil, ResumoCartao, Sessao, DadosEmissao, Desafio, Confirmacao, lerIdentidade, normalizarCpf } from './identidade';
 export function criarApi(url:string) {
   if(!/^https?:\/\/[^\s]+$/.test(url)) throw new Error('Informe o endereço completo do serviço.');
@@ -23,6 +23,7 @@ export function criarApi(url:string) {
     async horarios(token:string,signal?:AbortSignal) {return (await http.get<{horarios:string[]}>('/api/atendimentos/horarios',sessao(token,signal))).data;},
     async agendar(horario:string,token:string,signal?:AbortSignal) {return (await http.post<Atendimento>('/api/atendimentos',{horario},sessao(token,signal))).data;},
     async meusAtendimentos(token:string,signal?:AbortSignal) {return (await http.get<Atendimento[]>('/api/atendimentos/meus',sessao(token,signal))).data;},
+    async eventos(token:string,signal?:AbortSignal) {return (await http.get<EventoAdministrativo[]>('/api/eventos',admin(token,signal))).data;},
     async atendimentos(token:string,signal?:AbortSignal) {return (await http.get<Atendimento[]>('/api/atendimentos',admin(token,signal))).data;},
     async atualizarAtendimento(id:string,status:Exclude<StatusAtendimento,'agendado'>,token:string,signal?:AbortSignal) {return (await http.patch<Atendimento>(`/api/atendimentos/${encodeURIComponent(id)}/status`,{status},admin(token,signal))).data;},
     async foto(base64:string,mimeType:'image/jpeg'|'image/png',token:string,signal?:AbortSignal) {return (await http.post<{id:string;hash:string}>('/api/emissao/foto',{base64,mimeType},admin(token,signal))).data;},
