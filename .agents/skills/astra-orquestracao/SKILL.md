@@ -31,3 +31,7 @@ Não expor CPF, PIN, token administrativo, dados de imagem ou chaves reais. Não
 ## Critérios adicionais de aprovação
 
 Ler `docs/PADRAO-VISUAL-E-CONTEUDO.md` e revisar **todas** as seções: coerência de cabeçalho sticky da web, ausência de botões duplicados, texto enxuto e informativo, consistência entre cor, tipografia, espaçamentos, radius e microinterações. Incluir no ticket uma revisão de microdetalhes e um mapa de CTAs únicos. Verificar `docs/DOCUMENTACAO-FINAL.md` no encerramento; o conteúdo deve ser compreensível a leigos e nunca promover itens planejados como concluídos.
+
+## Publicação futura
+
+Usar `docs/PLANO-PUBLICACAO-GITHUB-CLOUDFLARE.md` para planejar GitHub, Cloudflare Pages, opções de backend e banco remoto. Revisar riscos, licenças, custos, variáveis públicas, persistência privada, builds e segurança antes de aprovar deploy. Cloudflare ainda não está implantado; não tratar planejamento como execução.
