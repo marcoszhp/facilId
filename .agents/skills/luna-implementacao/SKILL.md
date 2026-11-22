@@ -27,3 +27,7 @@ description: Implementa tarefas do FácilID no ambiente autorizado, inicia o pro
 
 ## Entrega
 Para cada ticket: arquivos alterados, dependências adicionadas, comandos realmente executados, resultados, URL local confirmada (se houver), evidências de browser, problemas e limitações. Enviar ao Astra para revisão. Nunca afirmar que MCP foi instalado sem teste no cliente.
+
+## Design editorial e documentação de entrega
+
+Implementar conforme `docs/PADRAO-VISUAL-E-CONTEUDO.md`, removendo textos genéricos e botões redundantes. Em cada seção, confirmar o objetivo do CTA, a consistência da interface e o resultado com teclado e rolagem. Ao finalizar, atualizar `docs/DOCUMENTACAO-FINAL.md` com linguagens e ferramentas efetivamente presentes na versão final, descrição curta para público leigo, funcionamento demonstrável, testes realmente executados e limitações. Não chamar o documento de definitivo sem essa conferência.
