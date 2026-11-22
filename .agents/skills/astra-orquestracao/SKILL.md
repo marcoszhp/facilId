@@ -27,3 +27,7 @@ Classificar cada ticket como APROVADO, AJUSTES NECESSÁRIOS ou REPROVADO. Exigir
 
 ## Privacidade e segurança
 Não expor CPF, PIN, token administrativo, dados de imagem ou chaves reais. Não alterar contratos de autenticação, assinatura, biometria ou persistência sem análise e testes específicos. Não tratar um chip NFC isoladamente como autenticação suficiente.
+
+## Critérios adicionais de aprovação
+
+Ler `docs/PADRAO-VISUAL-E-CONTEUDO.md` e revisar **todas** as seções: coerência de cabeçalho sticky da web, ausência de botões duplicados, texto enxuto e informativo, consistência entre cor, tipografia, espaçamentos, radius e microinterações. Incluir no ticket uma revisão de microdetalhes e um mapa de CTAs únicos. Verificar `docs/DOCUMENTACAO-FINAL.md` no encerramento; o conteúdo deve ser compreensível a leigos e nunca promover itens planejados como concluídos.
