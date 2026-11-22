@@ -15,3 +15,7 @@ Para trabalhos de design, implementação e validação, leia [docs/AGENTES-MCP-
 ## Design, textos e entrega final
 
 A identidade visual e as regras de conteúdo obrigatórias estão em [docs/PADRAO-VISUAL-E-CONTEUDO.md](docs/PADRAO-VISUAL-E-CONTEUDO.md). Exigir cabeçalho consistente/sticky na web, botões sem repetição, uma fonte e uma paleta, textos curtos e concretos. A documentação simples para pessoas leigas está em [docs/DOCUMENTACAO-FINAL.md](docs/DOCUMENTACAO-FINAL.md); atualizar contra o código realmente entregue antes da apresentação.
+
+## Publicação futura
+
+O código já está no GitHub; a hospedagem no Cloudflare permanece planejada, não executada. Consulte [docs/PLANO-PUBLICACAO-GITHUB-CLOUDFLARE.md](docs/PLANO-PUBLICACAO-GITHUB-CLOUDFLARE.md) antes de configurar CI/CD ou expor serviços. Site web, API Node e MySQL requerem decisões independentes. Não publicar segredos, abrir acesso ao banco local ou criar serviços pagos sem autorização.
