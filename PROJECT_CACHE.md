@@ -20,6 +20,7 @@ Raiz desta cópia: `C:/Users/marco/OneDrive/Desktop/NFC SENAC`. **Todos os camin
 | `backend/src/` | API, regras, criptografia, persistência; detalhes nas seções 3–7. |
 | `mobile/src/screens/`, `mobile/src/components/` | Fluxos e controles acessíveis. |
 | `mobile/src/services/`, `mobile/src/theme/index.ts` | Transporte, contratos, hardware e aparência. |
+| `website/` | Site institucional estático e independente da interface operacional Expo. A página institucional é estática e não se conecta à API. Prévia local: `python -m http.server 8765 --directory website`. |
 | `backend/tests/`, `mobile/tests/` | Contratos e regressões; localização na seção 11. |
 | `package.json`, `backend/package.json`, `mobile/package.json` | Workspaces, comandos e dependências; não há script lint. |
 | `README.md` | Guia operacional, demonstração, privacidade, hardware e XAMPP. |
@@ -161,7 +162,9 @@ Parser geral 16 KB. `X-Request-Id` em respostas; tratador geral retorna `mensage
 
 ## 10. Estado atual
 
-**Atualizado em03/10/2026.** Documentação profissional inicial concluída. Os sete itens autorizados em26/09 estão implementados e validados. Fonte do pedido: `C:/Users/marco/.codex/attachments/0e90f09c-5979-4b37-8627-ba32af71d477/Texto colado.txt`. Não iniciar recursos opcionais do histórico.
+**Atualizado em 22/11/2026.** O site institucional está pronto para publicação na branch local `feat/institutional-site`, separado do app Expo. A página `website/` usa HTML/CSS/JS estático e descreve o fluxo real do aplicativo, sem se conectar à API. O conteúdo público foi revisado conforme as solicitações do usuário. O usuário autorizou a publicação, mas o Cloudflare Pages ainda não foi configurado: o painel exigiu autenticação, e não há sessão/credenciais de deploy neste ambiente. Retomar a publicação quando houver acesso ao Cloudflare.
+
+Documentação profissional inicial concluída anteriormente. Os sete itens autorizados em 26/09/2026 estão implementados e validados. Fonte do pedido anterior: `C:/Users/marco/.codex/attachments/0e90f09c-5979-4b37-8627-ba32af71d477/Texto colado.txt`. Não iniciar recursos opcionais do histórico.
 
 | Item | Localização / decisão | Evidência completa |
 | --- | --- | --- |
