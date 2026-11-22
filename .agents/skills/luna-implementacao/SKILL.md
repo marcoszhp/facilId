@@ -31,3 +31,7 @@ Para cada ticket: arquivos alterados, dependências adicionadas, comandos realme
 ## Design editorial e documentação de entrega
 
 Implementar conforme `docs/PADRAO-VISUAL-E-CONTEUDO.md`, removendo textos genéricos e botões redundantes. Em cada seção, confirmar o objetivo do CTA, a consistência da interface e o resultado com teclado e rolagem. Ao finalizar, atualizar `docs/DOCUMENTACAO-FINAL.md` com linguagens e ferramentas efetivamente presentes na versão final, descrição curta para público leigo, funcionamento demonstrável, testes realmente executados e limitações. Não chamar o documento de definitivo sem essa conferência.
+
+## Publicação futura
+
+Consultar `docs/PLANO-PUBLICACAO-GITHUB-CLOUDFLARE.md`. Preparar export web e CI/CD somente no ticket de deploy autorizado; confirmar saída real do build. Não copiar o backend Express/arquivos cifrados ou MySQL local para Cloudflare Workers presumindo compatibilidade. Nunca publicar segredos nem dados reais. Relatar URL pública apenas após deploy confirmado.
