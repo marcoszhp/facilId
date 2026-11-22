@@ -11,3 +11,7 @@ O usuário pediu preservar uma margem de 5% do limite disponível. Quando a cons
 ## Ferramentas e papéis de agentes
 
 Para trabalhos de design, implementação e validação, leia [docs/AGENTES-MCP-SKILLS.md](docs/AGENTES-MCP-SKILLS.md). As skills de Astra, Luna e acessibilidade estão em `.agents/skills/`; a configuração MCP ilustrativa, **não instalada automaticamente**, está em `.agent-tools/mcp-servers.example.json`. Use somente ferramentas disponíveis e autorizadas no ambiente; não afirme instalação ou testes locais sem executá-los.
+
+## Design, textos e entrega final
+
+A identidade visual e as regras de conteúdo obrigatórias estão em [docs/PADRAO-VISUAL-E-CONTEUDO.md](docs/PADRAO-VISUAL-E-CONTEUDO.md). Exigir cabeçalho consistente/sticky na web, botões sem repetição, uma fonte e uma paleta, textos curtos e concretos. A documentação simples para pessoas leigas está em [docs/DOCUMENTACAO-FINAL.md](docs/DOCUMENTACAO-FINAL.md); atualizar contra o código realmente entregue antes da apresentação.
