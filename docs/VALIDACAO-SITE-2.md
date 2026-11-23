@@ -1,8 +1,8 @@
 # Validação do site Fácil ID 2.0
 
-Execução final em **23/11/2026, às 14:27:47 UTC (11:27:47 em Brasília)**. Escopo: `website/`, apresentação institucional estática e demonstração local. **18 cenários aprovados**, sem alteração dos arquivos durante a execução. A versão está pronta para revisão em preview; a produção permanece separada.
+Execução final em **23/11/2026, às 14:34:27 UTC (11:34:27 em Brasília)**. Escopo: `website/`, apresentação institucional estática e demonstração local. **18 cenários aprovados**, sem alteração dos arquivos durante a execução. A versão está pronta para revisão em preview; a produção permanece separada.
 
-Relatório local: `reports/website-depois.json`. Hash SHA-256 do conjunto público, calculado pelo roteiro de teste: `1888002de9bf20c1874f0a8c7b2f44172b85c309cfa3e495e33fa255d6f34a2b`.
+Relatório local: `reports/website-depois.json`. Hash SHA-256 do conjunto público, calculado pelo roteiro de teste: `b2e5ac1df71f133e21c3bb9c22c2bc2ed49ebd23d3c4984afea1fd7d537157c1`.
 
 ## Ambiente e reprodução
 
@@ -43,7 +43,7 @@ Páginas completas: [desktop](evidencias/site-2/depois-desktop-completo.png) e [
 | Funcionalidade | Ação principal levava a uma explicação | Ação principal leva à experiência interativa com PIN, erro, recuperação e reinício |
 | Acessibilidade | Duas regras axe com violações | Nenhuma violação automática nos seis estados auditados; teclado, reflow e movimento reduzido verificados, com limites abaixo |
 
-A revisão visual de Astra conferiu a aplicação renderizada e as capturas desktop/mobile. Foram corrigidos o corte lateral do título mobile, o espaço entre chip e nome no cartão, textos pequenos e a perda de foco durante processamento. O reteste completo acima foi executado após essas correções. Esta comparação descreve alterações observáveis; não atribui notas subjetivas de qualidade.
+A revisão visual de Astra conferiu a aplicação renderizada e as capturas desktop/mobile. Foram corrigidos o corte lateral do título mobile, o espaço entre chip e nome no cartão, textos pequenos, a perda de foco durante processamento e a ação duplicada de reinício no sucesso. O [estado final da demonstração](evidencias/site-2/demo-sucesso.png) oferece uma única ação para começar novamente. O reteste completo acima foi executado após essas correções. Esta comparação descreve alterações observáveis; não atribui notas subjetivas de qualidade.
 
 ## Cenários aprovados
 
@@ -67,16 +67,22 @@ Medição local, sem redução artificial de velocidade. LCP abaixo é o valor o
 
 | Tela | LCP observado | CLS inicial | Arquivos carregados após percorrer a página, sem compressão HTTP |
 | --- | --- | --- | --- |
-| 1920×1080 | 1652 ms | 0,000192 | 232.385 bytes |
-| 1440×900 | 1604 ms | 0,000011 | 232.385 bytes |
-| 1366×768 | 1604 ms | 0,000014 | 232.385 bytes |
-| 768×1024 | 1600 ms | 0,000021 | 232.385 bytes |
-| 390×844 | 1600 ms | 0,000016 | 209.431 bytes |
-| 375×812 | 1600 ms | 0 | 209.431 bytes |
+| 1920×1080 | 1656 ms | 0,000192 | 232.408 bytes |
+| 1440×900 | 1608 ms | 0,000407 | 232.408 bytes |
+| 1366×768 | 1600 ms | 0,000014 | 232.408 bytes |
+| 768×1024 | 1596 ms | 0,000021 | 232.408 bytes |
+| 390×844 | 1600 ms | 0,000016 | 209.454 bytes |
+| 375×812 | 1604 ms | 0 | 209.454 bytes |
 
-Durante o cenário completo da demonstração, CLS observado de 0,02523. Event Timing registrou eventos de interação de 16ms; esse registro não é uma medição de INP de campo. Os dois módulos JavaScript somam 14.242 bytes; a fonte local, 24.532 bytes. As fotografias carregam sob demanda e a principal usa versões responsivas. Nenhuma biblioteca de animação ou runtime de framework foi adicionada ao site.
+Durante o cenário completo da demonstração, CLS observado de 0,02523. Event Timing registrou eventos de interação de 16ms; esse registro não é uma medição de INP de campo. Os dois módulos JavaScript somam 14.265 bytes; a fonte local, 24.532 bytes. As fotografias carregam sob demanda e a principal usa versões responsivas. Nenhuma biblioteca de animação ou runtime de framework foi adicionada ao site.
 
 ## Método e limites
+
+### Conferência da prévia publicada
+
+O [PR #3](https://github.com/marcoszhp/facilId/pull/3) publicou automaticamente a [prévia Cloudflare](https://feat-facilid-2-premium.facilid.pages.dev/). O [deploy fixo `b9e2c30f`](https://b9e2c30f.facilid.pages.dev/) corresponde ao código `3886dfa`. Cinco verificações adicionais no endereço HTTPS passaram às **14:35:52 UTC em 23/11/2026**: desktop 1440×900, mobile 390×844, demonstração com PIN incorreto/recuperação/sucesso/reinício, ausência de transmissão e ausência de erros de console/HTTP. Relatório local: `reports/website-preview.json`; capturas em `output/playwright/facilid-2/preview/`.
+
+Os dez arquivos públicos conferidos responderam HTTP 200 e correspondem aos arquivos locais (comparação de bytes para imagens/fonte e normalização apenas de finais de linha para textos). O módulo `.mjs` foi servido como JavaScript; fonte e imagens tiveram tipos corretos. Registro: `reports/website-preview-assets.json`. A produção continuou com o conteúdo anterior e `main` em `48e9bbe`; nenhum merge foi realizado.
 
 Regressão dos workspaces executada por `npm run check`, concluída às 21:46:11 UTC em 22/11/2026: tipos e builds aprovados, 191 testes backend e 160 mobile aprovados (351 ao todo), com `changedDuringRun: false`. O aviso preexistente de depreciação de `SafeAreaView` continua. Não houve execução de testes MySQL reais nem acesso a dados externos. Evidência local: `reports/website-regression-check.json` e logs de types/tests/build.
 
