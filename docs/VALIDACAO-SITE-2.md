@@ -1,6 +1,6 @@
 # Validação do site Fácil ID 2.0
 
-Execução final em **23/11/2026, às 14:34:27 UTC (11:34:27 em Brasília)**. Escopo: `website/`, apresentação institucional estática e demonstração local. **18 cenários aprovados**, sem alteração dos arquivos durante a execução. A versão está pronta para revisão em preview; a produção permanece separada.
+Execução final da reconstrução em **23/11/2026, às 14:34:27 UTC (11:34:27 em Brasília)**. Escopo: `website/`, apresentação institucional estática e demonstração local. **18 cenários aprovados**, sem alteração dos arquivos durante a execução. A versão foi posteriormente publicada em https://facilid.pages.dev/ pelo PR #3, commit `9ada16e`, com autorização do usuário; cinco verificações adicionais em produção passaram (`reports/website-production.json`). Os registros de prévia abaixo descrevem a etapa anterior à publicação. A revisão seguinte tem um relatório próprio: [Validação editorial](VALIDACAO-EDITORIAL.md).
 
 Relatório local: `reports/website-depois.json`. Hash SHA-256 do conjunto público, calculado pelo roteiro de teste: `b2e5ac1df71f133e21c3bb9c22c2bc2ed49ebd23d3c4984afea1fd7d537157c1`.
 
