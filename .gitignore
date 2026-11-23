@@ -4,6 +4,8 @@ dist/
 .expo/
 backend/.local/
 reports/
+output/
+.playwright-cli/
 .env
 mobile/android/
 mobile/ios/

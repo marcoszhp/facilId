@@ -8,6 +8,8 @@ Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). Base in
 
 ## Escolha seu ponto de entrada
 
+Site institucional 2.0: [documentação final](DOCUMENTACAO-FINAL.md), [validação e comparação visual](VALIDACAO-SITE-2.md) e [fontes das fotografias](FONTES-VISUAIS.md).
+
 | Público / necessidade | Comece por |
 | --- | --- |
 | Professor, avaliador ou novo integrante | [Visão geral e escopo](VISAO-GERAL.md) |
