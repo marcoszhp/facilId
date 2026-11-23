@@ -252,7 +252,7 @@ if (panel) {
     }
     primary.textContent = message[3];
     primary.disabled = busy || (pinVisible && digits.length !== 4);
-    reset.hidden = state === "waiting";
+    reset.hidden = state === "waiting" || state === "success";
     invalid.hidden = state !== "waiting";
     fill.hidden = !pinVisible || busy;
     document.querySelectorAll(".pin-keypad button").forEach((button) => {

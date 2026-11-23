@@ -357,6 +357,7 @@ async function exerciseSite() {
       await waitState(page, 'confirming');
       await waitState(page, 'success');
       await snapshotDemo(page, 'success');
+      assert.ok(await page.locator('#demo-reset').isHidden(), 'O sucesso deve oferecer apenas uma ação para começar novamente.');
       await audit(page, 'demo success');
       await page.locator('#demo-primary').click();
       await waitState(page, 'waiting');
