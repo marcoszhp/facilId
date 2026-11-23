@@ -73,37 +73,32 @@ const heroFrames = [
     "Aproxime seu cartão para continuar.",
     "Apresentar cartão",
     "Aguardando cartão",
-    "Uma sequência ilustrativa.",
   ],
   [
     "Cartão apresentado",
     "Verificando o cartão de exemplo…",
     "Verificando…",
     "Cartão reconhecido",
-    "A confirmação ainda é necessária.",
   ],
   [
     "Confirme seu acesso",
     "Use o PIN de exemplo: 1234.",
     "Confirmar PIN",
     "Confirmação adicional",
-    "Seu PIN é uma etapa separada.",
   ],
   [
     "Tudo pronto.",
     "Agora você pode conhecer o perfil de exemplo.",
     "Perfil de exemplo",
     "Etapas concluídas",
-    "Resultado ilustrativo. Sem login real.",
   ],
 ];
 const setHeroFrame = (index) => {
-  const [heading, copy, action, notice, detail] = heroFrames[index];
+  const [heading, copy, action, notice] = heroFrames[index];
   hero.querySelector(".app-title").textContent = heading;
   hero.querySelector(".app-description").textContent = copy;
   hero.querySelector(".app-action span").textContent = action;
   hero.querySelector(".scene-notification strong").textContent = notice;
-  hero.querySelector(".scene-notification div > span").textContent = detail;
   hero.dataset.frame = String(index);
 };
 const finishHero = () => {
@@ -162,13 +157,24 @@ if (textToggle) {
     textToggle.querySelector("[aria-hidden]").textContent = enlarged
       ? "A−"
       : "A+";
-    textToggle.querySelector(".sr-only").textContent = enlarged
-      ? "Restaurar texto do exemplo"
-      : "Aumentar texto do exemplo";
     document
       .querySelector("#type-preview-text")
       .classList.toggle("enlarged", enlarged);
   });
+}
+
+const footer = document.querySelector(".site-footer");
+if (footer && "IntersectionObserver" in window) {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        if (!reducedMotion.matches) footer.classList.add("credits-arrived");
+        observer.disconnect();
+      }
+    },
+    { threshold: 0.15 },
+  );
+  observer.observe(footer);
 }
 
 const panel = document.querySelector("#demo-panel");
@@ -187,43 +193,43 @@ if (panel) {
     waiting: [
       "PASSO 01 DE 03",
       "Vamos apresentar seu cartão?",
-      "Toque no botão abaixo para iniciar a experiência fictícia.",
-      "Apresentar cartão fictício",
+      "Use o cartão de exemplo para começar.",
+      "Apresentar cartão",
     ],
     presented: [
       "PASSO 01 DE 03",
       "Cartão de exemplo apresentado.",
-      "Agora vamos simular a verificação do cartão.",
+      "Aguarde a verificação.",
       "Cartão apresentado",
     ],
     processing: [
       "PASSO 01 DE 03",
-      "Simulando a verificação…",
-      "Esta animação representa uma etapa. Nenhum dado é enviado.",
+      "Verificando o cartão…",
+      "Aguarde um instante.",
       "Verificando exemplo…",
     ],
     invalid: [
       "VAMOS TENTAR DE NOVO",
-      "Este cartão fictício não é válido.",
-      "No aplicativo, um cartão inválido não permite continuar. Experimente agora o cartão válido.",
+      "Este cartão não é válido.",
+      "Apresente o cartão válido para continuar.",
       "Usar cartão válido",
     ],
     pin: [
       "PASSO 02 DE 03",
-      "Uma confirmação antes de continuar.",
-      "Digite 1234 no teclado de exemplo e confirme.",
-      "Confirmar PIN fictício",
+      "Confirme seu acesso.",
+      "Digite 1234 e confirme.",
+      "Confirmar PIN",
     ],
     "pin-error": [
       "TENTE NOVAMENTE",
       "O PIN de exemplo não corresponde.",
-      "Tudo bem. Use 1234 para continuar esta demonstração.",
-      "Confirmar PIN fictício",
+      "Use 1234 para tentar novamente.",
+      "Confirmar PIN",
     ],
     confirming: [
       "PASSO 02 DE 03",
-      "Conferindo o exemplo…",
-      "A confirmação é simulada, somente nesta página.",
+      "Conferindo o PIN…",
+      "Aguarde um instante.",
       "Conferindo…",
     ],
     success: [

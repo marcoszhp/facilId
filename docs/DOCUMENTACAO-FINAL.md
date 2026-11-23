@@ -25,6 +25,8 @@ O responsável pode emitir, consultar e bloquear cartões, além de acompanhar a
 - Demonstração interativa com estados de processamento, confirmação, sucesso e erro.
 - Fonte Manrope hospedada no próprio site, imagens WebP responsivas e animações que respeitam a preferência por movimento reduzido.
 - Exemplo de ampliação de texto; o zoom do navegador funciona em toda a página.
+- Revisão editorial com menos chamadas repetidas, espaçamento ajustado e um aviso curto sobre os limites da simulação.
+- Rodapé azul-marinho com o crédito aos alunos do SENAC, menção a @marcoszhp e links para Instagram e GitHub.
 
 ## Demonstração
 
@@ -54,13 +56,13 @@ Na raiz do repositório:
 python -m http.server 8765 --bind 127.0.0.1 --directory website
 ```
 
-Abra `http://127.0.0.1:8765`. Não é necessário configurar variáveis de ambiente nem iniciar a API para usar o site. Os comandos de verificação, capturas antes/depois e resultados reais estão em [Validação do site](VALIDACAO-SITE-2.md).
+Abra `http://127.0.0.1:8765`. Não é necessário configurar variáveis de ambiente nem iniciar a API para usar o site. Os resultados da reconstrução estão em [Validação do site](VALIDACAO-SITE-2.md); a rodada mais recente está em [Validação editorial](VALIDACAO-EDITORIAL.md).
 
 ## Publicação e reversão
 
 Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). A produção existente está em [facilid.pages.dev](https://facilid.pages.dev/).
 
-A reconstrução usa a branch `feat/facilid-2-premium`, publicada no [pull request #3](https://github.com/marcoszhp/facilId/pull/3). A [prévia da nova versão](https://feat-facilid-2-premium.facilid.pages.dev/) está online para aprovação; a implantação do código `3886dfa` também possui um [endereço fixo de revisão](https://b9e2c30f.facilid.pages.dev/). A aprovação deve ocorrer antes de qualquer merge em `main`. A produção permanece na versão anterior, `48e9bbe`.
+A reconstrução foi publicada em produção em 23/11/2026, após autorização do usuário, pelo [pull request #3](https://github.com/marcoszhp/facilId/pull/3), commit `9ada16e`. O endereço oficial permanece **https://facilid.pages.dev/**. A revisão editorial seguinte foi preparada na branch `codex/editorial-refinement`; seu registro de publicação e evidências ficam em [Validação editorial](VALIDACAO-EDITORIAL.md).
 
 Cloudflare Pages utiliza a raiz do repositório, nenhum comando de build e a pasta de saída **website**. Os arquivos já estão prontos para publicação. A navegação usa âncoras da própria página, sem necessidade de reescrita de rotas. Fotos, fonte, CSS e JavaScript são locais; a hospedagem fornece HTTPS. Não há segredos ou variáveis de ambiente no institucional.
 

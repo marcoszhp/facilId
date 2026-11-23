@@ -182,11 +182,73 @@ async function exerciseSite() {
     throw new Error(`Não foi possível alcançar ${selector} por Tab.`);
   };
 
+  await check('editorial: remoções, aviso único e palavras separadas', async () => {
+    const page = await newPage({ width: 640, height: 900 });
+    try {
+      const text = (await page.locator('body').innerText()).replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+      const removed = [
+        'Mais autonomia. Menos barreiras.', 'Você no controle, do primeiro ao último passo.',
+        'Representação ilustrativa do aplicativo.', 'Simples por fora. Pensado em cada detalhe.',
+        'Mais clareza para decidir. Mais autonomia para continuar.', 'Somente nesta página. Sem cadastro.',
+        'Uma demonstração, sem dados reais.',
+        'Nada é enviado ou salvo. Não há leitura NFC, autenticação ou consulta a serviços nesta página.',
+        'Recursos que trabalham juntos para tornar o caminho mais compreensível.', 'Cuidado em cada detalhe.',
+      ];
+      for (const phrase of removed) assert.ok(!text.includes(phrase.toLocaleLowerCase('pt-BR')), phrase);
+      assert.equal(await page.locator('#demo-notice').count(), 1);
+      assert.match(await page.locator('#demo-notice').innerText(), /sem leitura NFC, login ou envio de dados/);
+      assert.match(await page.locator('.demo-mode').innerText(), /modo demonstração/i);
+      assert.match((await page.locator('#people-title').innerText()).replace(/\s+/g, ' '), /Tecnologia que respeita o seu tempo/);
+      assert.equal(await page.locator('.hero-footnote,.scene-label,.people-principle,.demo-disclaimer,.demo-panel-bottom,.hero-bottom').count(), 0);
+      return { removedPhrases: removed.length, noticeCount: 1 };
+    } finally { await page.context().close(); }
+  })();
+
+  await check('créditos: apresentação, links em nova aba e movimento reduzido', async () => {
+    const results = [];
+    for (const width of [1440, 390]) {
+      const page = await newPage({ width, height: 900 });
+      try {
+        const footer = page.locator('.site-footer');
+        await footer.scrollIntoViewIfNeeded();
+        await page.waitForFunction(() => document.querySelector('.site-footer').classList.contains('credits-arrived'));
+        await page.waitForTimeout(750);
+        assert.equal(await page.locator('.credits-title').innerText(), 'Projeto desenvolvido pelos alunos do SENAC.');
+        assert.match((await page.locator('.credits-mention').innerText()).replace(/\s+/g, ' '), /Menção honrosa a @marcoszhp/);
+        await footer.screenshot({ path: path.join(output, `credits-${width}.png`) });
+        await audit(page, `créditos ${width}`);
+        if (width === 1440) {
+          for (const href of ['https://www.instagram.com/marcoszhp/', 'https://github.com/marcoszhp']) {
+            const link = page.locator(`.footer-credits a[href="${href}"]`);
+            assert.equal(await link.getAttribute('target'), '_blank');
+            const rel = (await link.getAttribute('rel')).split(/\s+/);
+            assert.ok(rel.includes('noopener') && rel.includes('noreferrer'));
+            await link.focus();
+            const [popup] = await Promise.all([page.waitForEvent('popup'), page.keyboard.press('Enter')]);
+            await popup.waitForURL(location => location.hostname === new URL(href).hostname, { waitUntil: 'commit', timeout: 15000 });
+            const openedUrl = popup.url();
+            let load = 'loaded';
+            try { await popup.waitForLoadState('domcontentloaded', { timeout: 8000 }); }
+            catch { load = 'external-load-timeout'; }
+            assert.ok(await popup.evaluate(() => window.opener === null));
+            results.push({ href, openedUrl, load, openerIsNull: true });
+            await popup.close();
+          }
+        }
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.reload();
+        await footer.scrollIntoViewIfNeeded();
+        assert.equal(await page.locator('.footer-credits').evaluate(element => getComputedStyle(element).animationName), 'none');
+      } finally { await page.context().close(); }
+    }
+    return results;
+  })();
+
   await check('contraste de textos principais em superfícies sólidas', async () => {
     const page = await newPage({ width: 1440, height: 900 }, { reducedMotion: 'reduce' });
     try {
       const pairs = await page.evaluate(() => {
-        const selectors = ['.hero-lede', '.hero-footnote', '.hero-text-link', '.demo-mode', '#demo-status-description', '#demo-primary', '.demo-panel-bottom', '.site-footer p'];
+        const selectors = ['.hero-lede', '.hero-text-link', '.demo-mode', '#demo-status-description', '#demo-primary', '.demo-notice', '.credits-title', '.credits-mention', '.social-link'];
         return selectors.map(selector => {
           const element = document.querySelector(selector);
           const style = getComputedStyle(element);
