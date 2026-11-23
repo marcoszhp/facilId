@@ -50,7 +50,9 @@ Capturas completas e estados interativos: `output/playwright/facilid-2/editorial
 
 ## Publicação
 
-Destino autorizado: **https://facilid.pages.dev/**. Branch de trabalho: `codex/editorial-refinement`. A confirmação de publicação será registrada após o deploy e a verificação do endereço público.
+**Publicado em https://facilid.pages.dev/** pelo [PR #4](https://github.com/marcoszhp/facilId/pull/4), integrado em `main` no commit `59ddeaf62efcaccdfc578a121178312b82f3f3ff`. Cloudflare confirmou a implantação `b6cd340a-3e39-4538-a1d2-5f46294d9552`. A revisão automática CodeRabbit terminou com sucesso, sem comentários de revisão.
+
+A [prévia fixa](https://62c49b47.facilid.pages.dev/) passou em três verificações adicionais, e seus dez arquivos públicos corresponderam aos arquivos do commit Git (sem a conversão de quebras de linha do checkout Windows). Em produção, **sete verificações passaram às 19:55:32 de Brasília (22:55:32 UTC)**: desktop/mobile, limpeza editorial, créditos e links, demonstração completa, rede e console. Relatórios locais: `reports/website-editorial-preview.json`, `reports/website-editorial-preview-assets.json` e `reports/website-editorial-production.json`.
 
 ## Referências consultadas
 

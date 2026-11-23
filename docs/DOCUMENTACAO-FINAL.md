@@ -62,7 +62,7 @@ Abra `http://127.0.0.1:8765`. Não é necessário configurar variáveis de ambie
 
 Repositório: [marcoszhp/facilId](https://github.com/marcoszhp/facilId). A produção existente está em [facilid.pages.dev](https://facilid.pages.dev/).
 
-A reconstrução foi publicada em produção em 23/11/2026, após autorização do usuário, pelo [pull request #3](https://github.com/marcoszhp/facilId/pull/3), commit `9ada16e`. O endereço oficial permanece **https://facilid.pages.dev/**. A revisão editorial seguinte foi preparada na branch `codex/editorial-refinement`; seu registro de publicação e evidências ficam em [Validação editorial](VALIDACAO-EDITORIAL.md).
+A reconstrução foi publicada em produção em 23/11/2026, após autorização do usuário, pelo [pull request #3](https://github.com/marcoszhp/facilId/pull/3), commit `9ada16e`. O endereço oficial permanece **https://facilid.pages.dev/**. A revisão editorial e os créditos foram publicados pelo [pull request #4](https://github.com/marcoszhp/facilId/pull/4), commit `59ddeaf`, com sete verificações adicionais aprovadas no endereço público. O registro completo fica em [Validação editorial](VALIDACAO-EDITORIAL.md).
 
 Cloudflare Pages utiliza a raiz do repositório, nenhum comando de build e a pasta de saída **website**. Os arquivos já estão prontos para publicação. A navegação usa âncoras da própria página, sem necessidade de reescrita de rotas. Fotos, fonte, CSS e JavaScript são locais; a hospedagem fornece HTTPS. Não há segredos ou variáveis de ambiente no institucional.
 
