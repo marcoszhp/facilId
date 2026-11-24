@@ -1425,72 +1425,6 @@ h1 span {
   text-align: center;
   padding: 8px 0 12px;
 }
-.success-emblem {
-  width: 67px;
-  height: 67px;
-  border-radius: 50%;
-  background: var(--ice);
-  color: var(--blue);
-  display: grid;
-  place-items: center;
-  margin: 0 auto 22px;
-}
-.success-emblem .icon {
-  width: 31px;
-  height: 31px;
-}
-.profile-greeting {
-  font-size: var(--font-small);
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: var(--blue);
-}
-#demo-success-view h3 {
-  font-size: 1.7rem;
-  margin-top: 12px;
-  line-height: 1.2;
-}
-.example-profile {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  text-align: left;
-  margin-top: 25px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px;
-  background: white;
-}
-.profile-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--ice);
-  color: var(--blue);
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-.example-profile strong {
-  display: block;
-  font-size: var(--font-small);
-}
-.example-profile div > span {
-  font-size: var(--font-small);
-  display: block;
-  color: var(--muted);
-}
-.profile-check {
-  margin-left: auto;
-  width: 18px;
-  height: 18px;
-  color: var(--blue);
-}
-.profile-note {
-  font-size: var(--font-small);
-  margin: 16px auto 0;
-  max-width: 300px;
-}
 .demo-section :focus-visible {
   outline-color: #78afe1;
 }
@@ -2939,23 +2873,6 @@ h1 span {
   .pin-keypad {
     width: 230px;
   }
-  .example-profile {
-    padding: 14px;
-    gap: 10px;
-  }
-  .example-profile strong {
-    font-size: var(--font-small);
-  }
-  .example-profile div > span {
-    font-size: var(--font-small);
-  }
-  .profile-avatar {
-    width: 36px;
-    height: 36px;
-  }
-  .profile-check {
-    display: none;
-  }
   .resources-section h2 {
     font-size: 1.95rem;
   }
@@ -3263,4 +3180,234 @@ body .demo-feedback {
   .credits-title {
     max-width: 26ch;
   }
+}
+
+/* Identification specimen: CIE-inspired hierarchy, original Fácil ID artwork. */
+.specimen-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  text-align: left;
+  color: var(--ink);
+  border: 1px solid #b2cde3;
+  border-radius: 18px;
+  background:
+    repeating-radial-gradient(
+      ellipse at 95% 35%,
+      transparent 0 7px,
+      #2563a609 8px 9px
+    ),
+    linear-gradient(120deg, #e5f1fb, #fff 55%, #dcecf9);
+  box-shadow:
+    0 16px 32px #0b1f3a18,
+    inset 0 0 0 4px #ffffff80;
+  padding: 20px;
+}
+.identity-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #b2cde3;
+  padding-bottom: 12px;
+}
+.identity-brand {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--blue);
+  color: white;
+  font-size: 26px;
+  font-weight: 800;
+}
+.identity-heading strong {
+  display: block;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+}
+.identity-heading div > span {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.identity-sample {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--navy);
+  border: 1px solid #9fbdd7;
+  padding: 5px 7px;
+  border-radius: 4px;
+}
+.identity-body {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 18px;
+  position: relative;
+  padding-top: 18px;
+}
+.identity-portrait {
+  align-self: start;
+  background: linear-gradient(150deg, #c7dfef, #f4f9fe);
+  border: 1px solid #b2cde3;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.identity-portrait svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.identity-portrait span {
+  display: block;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 5px 0;
+  background: #e5f1fb;
+}
+.identity-data {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+}
+.identity-data dt {
+  font-size: 11px;
+  color: var(--navy);
+  line-height: 1.4;
+}
+.identity-data dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.identity-name,
+.identity-number {
+  grid-column: 1 / -1;
+}
+.identity-name dd {
+  font-size: clamp(18px, 2vw, 24px);
+  letter-spacing: -0.03em;
+}
+.identity-number dd {
+  letter-spacing: 0.12em;
+}
+.identity-watermark {
+  position: absolute;
+  right: -5px;
+  bottom: -20px;
+  font-size: 125px;
+  line-height: 1;
+  font-weight: 800;
+  color: #2563a60c;
+  z-index: -1;
+}
+.identity-bottom {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #b2cde3;
+}
+.identity-bottom > span:nth-child(2) {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.identity-bottom b {
+  padding-inline: 4px;
+}
+.identity-bottom .icon {
+  margin-left: auto;
+  color: var(--blue);
+}
+.identity-chip {
+  width: 40px;
+  height: 30px;
+  border: 1px solid #6a8ca9;
+  border-radius: 6px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 30%,
+      #6a8ca9 31% 33%,
+      transparent 34% 66%,
+      #6a8ca9 67% 69%,
+      transparent 70%
+    ),
+    linear-gradient(transparent 46%, #6a8ca9 47% 51%, transparent 52%), #d0e0ed;
+}
+#identity-note {
+  margin: 12px 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--navy);
+}
+[data-state="success"] .specimen-card {
+  animation: copy-in 650ms var(--ease) both;
+}
+@media (max-width: 600px) {
+  [data-state="success"] .demo-stage {
+    padding-inline: 12px;
+  }
+  .specimen-card {
+    padding: 14px;
+    border-radius: 12px;
+  }
+  .identity-heading {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .identity-heading div > span {
+    font-size: 9px;
+  }
+  .identity-sample {
+    font-size: 9px;
+  }
+  .identity-body {
+    grid-template-columns: 76px 1fr;
+    gap: 12px;
+  }
+  .identity-data {
+    gap: 10px 8px;
+  }
+  .identity-data dt {
+    font-size: 10px;
+  }
+  .identity-data dd {
+    font-size: 12px;
+  }
+  .identity-name dd {
+    font-size: 18px;
+  }
+  .identity-bottom > span:nth-child(2) {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+  #identity-note {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-state="success"] .specimen-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .identity-body { grid-template-columns: 58px minmax(0, 1fr); gap: 10px; }
+  .identity-data { grid-template-columns: minmax(0, 1fr); }
+  .identity-name dd { font-size: 16px; overflow-wrap: anywhere; }
+  .identity-heading div { flex: 1; min-width: 0; }
+  .identity-heading div > span { overflow-wrap: anywhere; }
+  .identity-portrait span { font-size: 8px; }
 }

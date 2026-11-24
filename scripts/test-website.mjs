@@ -418,6 +418,17 @@ async function exerciseSite() {
       await page.locator('#demo-primary').click();
       await waitState(page, 'confirming');
       await waitState(page, 'success');
+      assert.equal(await page.locator('#identity-name').innerText(), 'Marcos Edimundo');
+      assert.match(await page.locator('#identity-note').innerText(), /SEM VALIDADE DOCUMENTAL/);
+      for (const width of [1440, 390, 375, 320]) {
+        await page.setViewportSize({width, height: 900});
+        await page.locator('.specimen-card').scrollIntoViewIfNeeded();
+        await page.waitForTimeout(700);
+        assert.ok(await page.locator('.specimen-card').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `Cartão cortado em ${width}`);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow em ${width}`);
+        await page.locator('.specimen-card').screenshot({path: path.join(output, `identity-${width}.png`)});
+      }
+      await page.setViewportSize({width: 1440, height: 900});
       await snapshotDemo(page, 'success');
       assert.ok(await page.locator('#demo-reset').isHidden(), 'O sucesso deve oferecer apenas uma ação para começar novamente.');
       await audit(page, 'demo success');
