@@ -418,7 +418,7 @@ async function exerciseSite() {
       await page.locator('#demo-primary').click();
       await waitState(page, 'confirming');
       await waitState(page, 'success');
-      assert.equal(await page.locator('#identity-name').innerText(), 'Marcos Edimundo');
+      assert.equal(await page.locator('#identity-name').innerText(), 'Marcos Henrique');
       assert.match(await page.locator('#identity-note').innerText(), /SEM VALIDADE DOCUMENTAL/);
       for (const width of [1440, 390, 375, 320]) {
         await page.setViewportSize({width, height: 900});
