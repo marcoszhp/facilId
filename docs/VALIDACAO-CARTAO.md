@@ -24,3 +24,5 @@ Frente e verso preservam o espaço do cartão. Só a face visível fica disponí
 | Verso no computador | Verso no celular |
 | --- | --- |
 | ![Verso desktop](evidencias/cartao/verso-desktop.png) | ![Verso mobile](evidencias/cartao/verso-mobile.png) |
+
+Verso publicado em https://facilid.pages.dev/ pelo PR #7, commit `5379165`. Cloudflare confirmou sucesso. Duas verificações de produção aprovadas em 2026-11-24T01:12:39.520Z: fluxo completo de frente/verso nas quatro larguras, teclado, reinício e console/HTTP (`reports/website-card-back-production.json`).
