@@ -3255,10 +3255,19 @@ body .demo-feedback {
   border-radius: 6px;
   overflow: hidden;
 }
-.identity-portrait svg {
+.identity-photo {
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+}
+.identity-portrait img {
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: 85% 20%;
+  transform: scale(1.65);
+  transform-origin: 50% 22%;
 }
 .identity-portrait span {
   display: block;

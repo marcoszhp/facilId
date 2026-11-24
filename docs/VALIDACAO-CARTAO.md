@@ -26,3 +26,7 @@ Frente e verso preservam o espaço do cartão. Só a face visível fica disponí
 | ![Verso desktop](evidencias/cartao/verso-desktop.png) | ![Verso mobile](evidencias/cartao/verso-mobile.png) |
 
 Verso publicado em https://facilid.pages.dev/ pelo PR #7, commit `5379165`. Cloudflare confirmou sucesso. Duas verificações de produção aprovadas em 2026-11-24T01:12:39.520Z: fluxo completo de frente/verso nas quatro larguras, teclado, reinício e console/HTTP (`reports/website-card-back-production.json`).
+
+## Fotografia no cartão
+
+Avatar substituído por foto real de Kampus Production já usada no site. Recorte aplicado somente por CSS, com legenda Foto ilustrativa e alt que distingue a fotografia dos dados fictícios de Marcos Henrique. Fonte/licença em [Fontes visuais](FONTES-VISUAIS.md). Fluxo completo, frente/verso em quatro larguras e console/HTTP aprovados em 2026-11-24T01:16:07.000Z (`reports/website-card-photo-final.json`). Captura real revisada: [cartão com foto](evidencias/cartao/foto-mobile.png).
