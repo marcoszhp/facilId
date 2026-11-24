@@ -1,6 +1,6 @@
 # Cartão final da demonstração
 
-O último passo agora apresenta um cartão Fácil ID inspirado na hierarquia visual do CIE: avatar à esquerda, identificação à direita, textura de linhas, chip e marca em azul. Todos os exemplos públicos usam Marcos Edimundo. Datas e identificador são fictícios; o cartão indica que não tem validade documental. Não contém brasões oficiais, credenciais reais ou leitura NFC funcional.
+O último passo agora apresenta um cartão Fácil ID inspirado na hierarquia visual do CIE: avatar à esquerda, identificação à direita, textura de linhas, chip e marca em azul. Todos os exemplos públicos usam Marcos Henrique. As capturas abaixo registram a versão anterior à troca de nome. Datas e identificador são fictícios; o cartão indica que não tem validade documental. Não contém brasões oficiais, credenciais reais ou leitura NFC funcional.
 
 A máquina de estados e o PIN de exemplo 1234 permanecem iguais. CSS isolado preserva o cartão animado da abertura. A entrada do novo cartão respeita movimento reduzido.
 

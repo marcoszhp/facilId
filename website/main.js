@@ -235,7 +235,7 @@ if (panel) {
     success: [
       "PASSO 03 DE 03",
       "Seu cartão está pronto.",
-      "Este é o cartão de exemplo de Marcos Edimundo.",
+      "Este é o cartão de exemplo de Marcos Henrique.",
       "Experimentar novamente",
     ],
   };
