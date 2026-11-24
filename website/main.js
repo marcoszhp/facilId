@@ -234,8 +234,8 @@ if (panel) {
     ],
     success: [
       "PASSO 03 DE 03",
-      "Você completou a demonstração.",
-      "No aplicativo, a confirmação permite seguir para os recursos disponíveis.",
+      "Seu cartão está pronto.",
+      "Este é o cartão de exemplo de Marcos Edimundo.",
       "Experimentar novamente",
     ],
   };
