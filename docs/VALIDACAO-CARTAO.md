@@ -30,3 +30,5 @@ Verso publicado em https://facilid.pages.dev/ pelo PR #7, commit `5379165`. Clou
 ## Fotografia no cartão
 
 Avatar substituído por foto real de Kampus Production já usada no site. Recorte aplicado somente por CSS, com legenda Foto ilustrativa e alt que distingue a fotografia dos dados fictícios de Marcos Henrique. Fonte/licença em [Fontes visuais](FONTES-VISUAIS.md). Fluxo completo, frente/verso em quatro larguras e console/HTTP aprovados em 2026-11-24T01:16:07.000Z (`reports/website-card-photo-final.json`). Captura real revisada: [cartão com foto](evidencias/cartao/foto-mobile.png).
+
+Foto publicada pelo PR #8, commit `da0e8ab`, em https://facilid.pages.dev/. Cloudflare confirmou sucesso; fluxo completo, frente/verso nas quatro larguras e console/HTTP passaram em produção (`reports/website-card-photo-production.json`).
