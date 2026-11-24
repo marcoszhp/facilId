@@ -437,97 +437,176 @@
                 </div>
               </div>
               <div class="demo-view" id="demo-success-view" hidden>
-                <article
-                  class="specimen-card"
-                  aria-labelledby="identity-name"
-                  aria-describedby="identity-note"
-                >
-                  <header class="identity-heading">
-                    <span class="identity-brand" aria-hidden="true">fi</span>
-                    <div>
-                      <strong>FÁCIL ID</strong
-                      ><span>CARTÃO DE IDENTIFICAÇÃO DIGITAL</span>
+                <div class="specimen-deck" id="specimen-deck" data-side="front">
+                  <article
+                    id="specimen-front"
+                    class="specimen-card specimen-face"
+                    aria-labelledby="identity-name"
+                    aria-describedby="identity-note"
+                  >
+                    <header class="identity-heading">
+                      <span class="identity-brand" aria-hidden="true">fi</span>
+                      <div>
+                        <strong>FÁCIL ID</strong
+                        ><span>CARTÃO DE IDENTIFICAÇÃO DIGITAL</span>
+                      </div>
+                      <span class="identity-sample">EXEMPLO</span>
+                    </header>
+                    <div class="identity-body">
+                      <div
+                        class="identity-portrait"
+                        role="img"
+                        aria-label="Avatar ilustrativo de Marcos Henrique"
+                      >
+                        <svg viewBox="0 0 120 150" aria-hidden="true">
+                          <path
+                            d="M0 150v-22c0-22 22-36 43-40h34c21 4 43 18 43 40v22"
+                            fill="#14345B"
+                          />
+                          <path
+                            d="m43 88 17 23 17-23-6-17H49Z"
+                            fill="#418AD3"
+                          />
+                          <ellipse
+                            cx="60"
+                            cy="52"
+                            rx="28"
+                            ry="35"
+                            fill="#2563A6"
+                          />
+                          <path
+                            d="M32 48C24 12 48 8 60 9c28-1 34 20 28 39l-8-21c-17 9-28 5-39 1Z"
+                            fill="#14345B"
+                          />
+                          <path
+                            d="m44 92 16 20-14 25-13-39m43-6-16 20 14 25 13-39"
+                            fill="#DCECF9"
+                          />
+                          <path
+                            d="M48 53h7m10 0h7M54 72q6 4 12 0"
+                            fill="none"
+                            stroke="#DCECF9"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                          />
+                        </svg>
+                        <span>AVATAR FICTÍCIO</span>
+                      </div>
+                      <dl class="identity-data">
+                        <div class="identity-name">
+                          <dt>Nome / Name</dt>
+                          <dd id="identity-name">Marcos Henrique</dd>
+                        </div>
+                        <div>
+                          <dt>Nascimento</dt>
+                          <dd>18/04/1956</dd>
+                        </div>
+                        <div>
+                          <dt>Nacionalidade</dt>
+                          <dd>Brasileira</dd>
+                        </div>
+                        <div>
+                          <dt>Emissão</dt>
+                          <dd>23/11/2026</dd>
+                        </div>
+                        <div>
+                          <dt>Validade</dt>
+                          <dd>23/11/2031</dd>
+                        </div>
+                        <div class="identity-number">
+                          <dt>Identificador de exemplo</dt>
+                          <dd>DEMO 0001</dd>
+                        </div>
+                      </dl>
+                      <span class="identity-watermark" aria-hidden="true"
+                        >fi</span
+                      >
                     </div>
-                    <span class="identity-sample">EXEMPLO</span>
-                  </header>
-                  <div class="identity-body">
-                    <div
-                      class="identity-portrait"
-                      role="img"
-                      aria-label="Avatar ilustrativo de Marcos Henrique"
-                    >
-                      <svg viewBox="0 0 120 150" aria-hidden="true">
-                        <path
-                          d="M0 150v-22c0-22 22-36 43-40h34c21 4 43 18 43 40v22"
-                          fill="#14345B"
-                        />
-                        <path d="m43 88 17 23 17-23-6-17H49Z" fill="#418AD3" />
-                        <ellipse
-                          cx="60"
-                          cy="52"
-                          rx="28"
-                          ry="35"
-                          fill="#2563A6"
-                        />
-                        <path
-                          d="M32 48C24 12 48 8 60 9c28-1 34 20 28 39l-8-21c-17 9-28 5-39 1Z"
-                          fill="#14345B"
-                        />
-                        <path
-                          d="m44 92 16 20-14 25-13-39m43-6-16 20 14 25 13-39"
-                          fill="#DCECF9"
-                        />
-                        <path
-                          d="M48 53h7m10 0h7M54 72q6 4 12 0"
-                          fill="none"
-                          stroke="#DCECF9"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                        />
+                    <footer class="identity-bottom">
+                      <span class="identity-chip" aria-hidden="true"></span>
+                      <span>ACESSOSÊNIOR <b>•</b> FÁCIL ID</span>
+                      <svg class="icon" aria-hidden="true">
+                        <use href="#i-nfc" />
                       </svg>
-                      <span>AVATAR FICTÍCIO</span>
-                    </div>
-                    <dl class="identity-data">
-                      <div class="identity-name">
-                        <dt>Nome / Name</dt>
-                        <dd id="identity-name">Marcos Henrique</dd>
+                    </footer>
+                    <p id="identity-note">
+                      DADOS FICTÍCIOS · SEM VALIDADE DOCUMENTAL
+                    </p>
+                  </article>
+                  <article
+                    id="specimen-back"
+                    class="specimen-card specimen-face specimen-back"
+                    aria-label="Verso do cartão de Marcos Henrique"
+                    aria-describedby="identity-back-note"
+                    aria-hidden="true"
+                    inert
+                  >
+                    <header class="identity-heading">
+                      <span class="identity-brand" aria-hidden="true">fi</span>
+                      <div>
+                        <strong>FÁCIL ID</strong
+                        ><span>INFORMAÇÕES DO TITULAR</span>
+                      </div>
+                      <span class="identity-sample">EXEMPLO</span>
+                    </header>
+                    <dl class="identity-back-data">
+                      <div>
+                        <dt>Nome completo</dt>
+                        <dd>Marcos Henrique</dd>
                       </div>
                       <div>
-                        <dt>Nascimento</dt>
-                        <dd>18/04/1956</dd>
+                        <dt>Filiação</dt>
+                        <dd>Ana Henrique<br />João Henrique</dd>
                       </div>
                       <div>
-                        <dt>Nacionalidade</dt>
-                        <dd>Brasileira</dd>
+                        <dt>Naturalidade</dt>
+                        <dd>Cidade Exemplo · Brasil</dd>
                       </div>
                       <div>
-                        <dt>Emissão</dt>
-                        <dd>23/11/2026</dd>
+                        <dt>Endereço de exemplo</dt>
+                        <dd>Rua Modelo, 000<br />Cidade Exemplo · Brasil</dd>
                       </div>
                       <div>
-                        <dt>Validade</dt>
-                        <dd>23/11/2031</dd>
-                      </div>
-                      <div class="identity-number">
-                        <dt>Identificador de exemplo</dt>
+                        <dt>Registro de exemplo</dt>
                         <dd>DEMO 0001</dd>
                       </div>
+                      <div>
+                        <dt>Emissão / Validade</dt>
+                        <dd>23/11/2026 · 23/11/2031</dd>
+                      </div>
                     </dl>
-                    <span class="identity-watermark" aria-hidden="true"
-                      >fi</span
-                    >
-                  </div>
-                  <footer class="identity-bottom">
-                    <span class="identity-chip" aria-hidden="true"></span>
-                    <span>ACESSOSÊNIOR <b>•</b> FÁCIL ID</span>
-                    <svg class="icon" aria-hidden="true">
-                      <use href="#i-nfc" />
-                    </svg>
-                  </footer>
-                  <p id="identity-note">
-                    DADOS FICTÍCIOS · SEM VALIDADE DOCUMENTAL
-                  </p>
-                </article>
+                    <div class="identity-back-mark" aria-hidden="true">
+                      <span class="identity-chip"></span
+                      ><span>FÁCIL ID · ACESSOSÊNIOR</span>
+                    </div>
+                    <div class="identity-code" aria-hidden="true">
+                      <span
+                        >DEMO&lt;FACILID&lt;0001&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span
+                      >
+                      <span
+                        >MARCOS&lt;HENRIQUE&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span
+                      >
+                      <span>SEM&lt;VALIDADE&lt;DOCUMENTAL&lt;&lt;&lt;</span>
+                    </div>
+                    <p id="identity-back-note">
+                      DADOS FICTÍCIOS · SEM VALIDADE DOCUMENTAL
+                    </p>
+                  </article>
+                </div>
+                <div class="specimen-controls">
+                  <span id="specimen-side" role="status" aria-live="polite"
+                    >Frente do cartão</span
+                  >
+                  <button
+                    id="specimen-flip"
+                    class="button button-outline"
+                    type="button"
+                    aria-controls="specimen-front specimen-back"
+                  >
+                    <span aria-hidden="true">↻</span
+                    ><span id="specimen-flip-label">Virar para o verso</span>
+                  </button>
+                </div>
               </div>
             </div>
             <div
