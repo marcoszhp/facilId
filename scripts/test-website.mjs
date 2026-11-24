@@ -422,18 +422,41 @@ async function exerciseSite() {
       assert.match(await page.locator('#identity-note').innerText(), /SEM VALIDADE DOCUMENTAL/);
       for (const width of [1440, 390, 375, 320]) {
         await page.setViewportSize({width, height: 900});
-        await page.locator('.specimen-card').scrollIntoViewIfNeeded();
+        await page.locator('#specimen-front').scrollIntoViewIfNeeded();
         await page.waitForTimeout(700);
-        assert.ok(await page.locator('.specimen-card').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `Cartão cortado em ${width}`);
+        assert.ok(await page.locator('#specimen-front').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `Cartão cortado em ${width}`);
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow em ${width}`);
-        await page.locator('.specimen-card').screenshot({path: path.join(output, `identity-${width}.png`)});
+        await page.locator('#specimen-front').screenshot({path: path.join(output, `identity-${width}.png`)});
+        const flip = page.locator('#specimen-flip');
+        await flip.focus();
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(500);
+        assert.equal(await page.locator('#specimen-deck').getAttribute('data-side'), 'back');
+        assert.equal(await page.locator('#specimen-front').getAttribute('aria-hidden'), 'true');
+        assert.ok(await page.locator('#specimen-front').evaluate(el => el.inert));
+        assert.match(await page.locator('#specimen-back').innerText(), /Marcos Henrique/);
+        assert.ok(await page.locator('#specimen-back').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `Verso cortado em ${width}`);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+        assert.equal(await page.evaluate(() => document.activeElement.id), 'specimen-flip');
+        await page.locator('#specimen-back').screenshot({path: path.join(output, `identity-back-${width}.png`)});
+        if (width === 375) await audit(page, 'verso mobile');
+        await page.keyboard.press('Space');
+        assert.equal(await page.locator('#specimen-deck').getAttribute('data-side'), 'front');
+
       }
       await page.setViewportSize({width: 1440, height: 900});
       await snapshotDemo(page, 'success');
       assert.ok(await page.locator('#demo-reset').isHidden(), 'O sucesso deve oferecer apenas uma ação para começar novamente.');
       await audit(page, 'demo success');
+      await page.emulateMedia({reducedMotion: 'reduce'});
+      await page.locator('#specimen-flip').click();
+      assert.equal(await page.locator('#specimen-back').evaluate(el => getComputedStyle(el).animationName), 'none');
+      await page.locator('#specimen-flip').click({clickCount: 3});
+      assert.equal(await page.locator('#specimen-deck').getAttribute('data-side'), 'front');
+      await page.locator('#specimen-flip').click();
       await page.locator('#demo-primary').click();
       await waitState(page, 'waiting');
+      assert.equal(await page.locator('#specimen-deck').getAttribute('data-side'), 'front');
       const states = await page.evaluate(() => [...new Set(window.__demoStates)]);
       for (const state of ['waiting', 'presented', 'processing', 'pin', 'pin-error', 'confirming', 'success']) assert.ok(states.includes(state), `Estado não observado: ${state}`);
       const metrics = await page.evaluate(() => window.__siteMetrics);

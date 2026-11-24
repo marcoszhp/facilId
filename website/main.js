@@ -189,6 +189,26 @@ if (panel) {
   const views = ["card", "pin", "success"].map((name) =>
     document.querySelector(`#demo-${name}-view`),
   );
+  const deck = document.querySelector("#specimen-deck");
+  const flip = document.querySelector("#specimen-flip");
+  const setCardSide = (back) => {
+    deck.dataset.side = back ? "back" : "front";
+    for (const side of ["front", "back"]) {
+      const face = document.querySelector(`#specimen-${side}`);
+      const inactive = side !== deck.dataset.side;
+      face.inert = inactive;
+      face.setAttribute("aria-hidden", String(inactive));
+    }
+    document.querySelector("#specimen-side").textContent = back
+      ? "Verso do cartão"
+      : "Frente do cartão";
+    document.querySelector("#specimen-flip-label").textContent = back
+      ? "Virar para a frente"
+      : "Virar para o verso";
+  };
+  flip.addEventListener("click", () =>
+    setCardSide(deck.dataset.side !== "back"),
+  );
   const messages = {
     waiting: [
       "PASSO 01 DE 03",
@@ -246,6 +266,7 @@ if (panel) {
     const busy = ["presented", "processing", "confirming"].includes(state);
     const view = state === "success" ? 2 : pinVisible ? 1 : 0;
     const activeBefore = document.activeElement;
+    if (changed && state === "waiting") setCardSide(false);
     panel.dataset.state = state;
     views.forEach((element, index) => {
       element.hidden = index !== view;

@@ -3344,7 +3344,8 @@ body .demo-feedback {
     ),
     linear-gradient(transparent 46%, #6a8ca9 47% 51%, transparent 52%), #d0e0ed;
 }
-#identity-note {
+#identity-note,
+#identity-back-note {
   margin: 12px 0 0;
   font-size: 10px;
   font-weight: 700;
@@ -3392,7 +3393,8 @@ body .demo-feedback {
     font-size: 9px;
     letter-spacing: 0;
   }
-  #identity-note {
+  #identity-note,
+  #identity-back-note {
     font-size: 9px;
     letter-spacing: 0;
   }
@@ -3404,10 +3406,153 @@ body .demo-feedback {
 }
 
 @media (max-width: 360px) {
-  .identity-body { grid-template-columns: 58px minmax(0, 1fr); gap: 10px; }
-  .identity-data { grid-template-columns: minmax(0, 1fr); }
-  .identity-name dd { font-size: 16px; overflow-wrap: anywhere; }
-  .identity-heading div { flex: 1; min-width: 0; }
-  .identity-heading div > span { overflow-wrap: anywhere; }
-  .identity-portrait span { font-size: 8px; }
+  .identity-body {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .identity-data {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .identity-name dd {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+  .identity-heading div {
+    flex: 1;
+    min-width: 0;
+  }
+  .identity-heading div > span {
+    overflow-wrap: anywhere;
+  }
+  .identity-portrait span {
+    font-size: 8px;
+  }
+}
+
+/* Both faces share a grid cell, reserving space while exposing only one face. */
+.specimen-deck {
+  display: grid;
+  perspective: 1200px;
+}
+.specimen-face {
+  grid-area: 1 / 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.specimen-face[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+[data-state="success"] .specimen-face {
+  animation: none;
+}
+[data-state="success"] .specimen-face:not([aria-hidden="true"]) {
+  animation: specimen-turn 450ms var(--ease) both;
+}
+.specimen-face .identity-bottom {
+  margin-top: auto;
+}
+.specimen-face .identity-body {
+  padding-bottom: 18px;
+}
+.identity-back-data {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 18px;
+  margin: 16px 0;
+}
+.identity-back-data dt {
+  font-size: 11px;
+  color: var(--navy);
+  line-height: 1.4;
+}
+.identity-back-data dd {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 2px 0 0;
+}
+.identity-back-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-bottom: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.identity-code {
+  padding: 12px 10px;
+  margin-inline: -20px;
+  background: #dcecf9;
+  border-block: 1px solid #b2cde3;
+}
+.identity-code span {
+  display: block;
+  font-size: clamp(10px, 1.2vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  text-align: center;
+}
+.specimen-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+#specimen-side {
+  font-size: 14px;
+  color: var(--navy);
+}
+#specimen-flip {
+  min-height: 48px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+@keyframes specimen-turn {
+  from {
+    transform: rotateY(-65deg);
+    opacity: 0.25;
+  }
+  to {
+    transform: rotateY(0);
+    opacity: 1;
+  }
+}
+@media (max-width: 600px) {
+  .identity-back-data {
+    gap: 12px;
+  }
+  .identity-back-data dt {
+    font-size: 10px;
+  }
+  .identity-back-data dd {
+    font-size: 12px;
+  }
+  .identity-code {
+    margin-inline: -14px;
+  }
+  .identity-code span {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+  }
+}
+@media (max-width: 360px) {
+  .identity-back-data {
+    grid-template-columns: 1fr;
+  }
+  .identity-code span {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-state="success"] .specimen-face:not([aria-hidden="true"]) {
+    animation: none;
+  }
 }
