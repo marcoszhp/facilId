@@ -6,7 +6,7 @@ Consulta e seleção: 22/11/2026. A direção visual e os componentes foram cria
 
 | Arquivo em `website/assets/` | Autoria e fonte | Uso |
 | --- | --- | --- |
-| `pessoa-tecnologia-1280.webp`, `pessoa-tecnologia-640.webp` | [Kampus Production — An Elderly Man using a Tablet](https://www.pexels.com/photo/an-elderly-man-using-a-tablet-7983611/) | Fotografia principal de homem idoso negro utilizando um tablet. |
+| `pessoa-tecnologia-1280.webp`, `pessoa-tecnologia-640.webp` | [Kampus Production — An Elderly Man using a Tablet](https://www.pexels.com/photo/an-elderly-man-using-a-tablet-7983611/) | Fotografia principal de homem idoso negro utilizando um tablet; a versão 640 também ilustra o retrato do cartão, enquadrado por CSS, sem alterar a fotografia. |
 | `conexao-idoso-640.webp` | [Ron Lach — Photo of an Elderly Man Talking on Phone](https://www.pexels.com/photo/photo-of-an-elderly-man-talking-on-phone-7870681/) | Retrato complementar de homem idoso negro utilizando um telefone. |
 
 As duas fotografias foram conferidas visualmente e são fotografias de banco, não imagens geradas por IA. O pedido de representação de pessoas idosas negras orientou a seleção. Não são depoimentos de clientes e não atribuem endosso às pessoas retratadas.
@@ -31,3 +31,5 @@ A [licença Pexels](https://www.pexels.com/license/) permite uso gratuito e adap
 O institucional já vive em `website/`, separado do Expo. HTML semântico, CSS e módulos JavaScript atendem à demonstração local, à composição em perspectiva, à navegação acessível e às animações necessárias. Não foi identificada uma limitação que justificasse migrar esta página para React/Vite. A escolha mantém o carregamento pequeno e a configuração atual de Cloudflare Pages: sem comando de build e saída `website`.
 
 O aplicativo Expo, o servidor Express e o armazenamento MySQL/arquivos privados mantêm suas responsabilidades. A demonstração do institucional não se conecta à API nem cria uma sessão autenticada. A branch de revisão deve ser publicada como preview; a substituição de `main` depende da aprovação da nova versão.
+
+O retrato do cartão é uma foto ilustrativa de Kampus Production, sem vínculo entre a pessoa fotografada e a identidade fictícia Marcos Henrique. Nome, filiação e demais dados são exemplos. Fonte e licença Pexels reconferidas durante a substituição do avatar; nenhum recurso de IA foi usado na foto.
